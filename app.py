@@ -119,6 +119,161 @@ class FinancialTracker:
             'total_investments': total_investments,
             'net_worth': net_worth
         }
+        def generate_monthly_overview(self):
+    """Generate a comprehensive monthly financial overview"""
+    # Aggregate monthly expenses
+    monthly_expenses = list(self.expenses_collection.aggregate([
+        {
+            '$group': {
+                '_id': {
+                    'year': {'$year': '$date'},
+                    'month': {'$month': '$date'}
+                },
+                'total_expenses': {'$sum': '$amount'},
+                'expense_categories': {
+                    '$push': {
+                        'category': '$category',
+                        'amount': '$amount'
+                    }
+                }
+            }
+        },
+        {'$sort': {'_id.year': 1, '_id.month': 1}}
+    ]))
+
+    # Aggregate monthly income
+    monthly_income = list(self.income_collection.aggregate([
+        {
+            '$group': {
+                '_id': {
+                    'year': {'$year': '$date'},
+                    'month': {'$month': '$date'}
+                },
+                'total_income': {'$sum': '$amount'},
+                'income_sources': {
+                    '$push': {
+                        'source': '$source',
+                        'amount': '$amount'
+                    }
+                }
+            }
+        },
+        {'$sort': {'_id.year': 1, '_id.month': 1}}
+    ]))
+
+    # Aggregate monthly investments
+    monthly_investments = list(self.investments_collection.aggregate([
+        {
+            '$group': {
+                '_id': {
+                    'year': {'$year': '$date'},
+                    'month': {'$month': '$date'}
+                },
+                'total_investments': {'$sum': '$amount'},
+                'investment_types': {
+                    '$push': {
+                        'type': '$type',
+                        'amount': '$amount'
+                    }
+                }
+            }
+        },
+        {'$sort': {'_id.year': 1, '_id.month': 1}}
+    ]))
+
+    # Prepare data for visualization
+    monthly_data = []
+    for exp in monthly_expenses:
+        month_data = {
+            'year': exp['_id']['year'],
+            'month': exp['_id']['month'],
+            'total_expenses': exp['total_expenses'],
+            'total_income': 0,
+            'total_investments': 0
+        }
+        
+        # Match income
+        matching_income = next((inc for inc in monthly_income if 
+                                inc['_id']['year'] == exp['_id']['year'] and 
+                                inc['_id']['month'] == exp['_id']['month']), None)
+        if matching_income:
+            month_data['total_income'] = matching_income['total_income']
+        
+        # Match investments
+        matching_investments = next((inv for inv in monthly_investments if 
+                                     inv['_id']['year'] == exp['_id']['year'] and 
+                                     inv['_id']['month'] == exp['_id']['month']), None)
+        if matching_investments:
+            month_data['total_investments'] = matching_investments['total_investments']
+        
+        monthly_data.append(month_data)
+
+    return monthly_data
+
+def display_monthly_overview(self, st):
+    """Display monthly financial overview in Streamlit"""
+    monthly_data = self.generate_monthly_overview()
+    
+    # Prepare data for plotting
+    df_monthly = pd.DataFrame(monthly_data)
+    df_monthly['month_year'] = df_monthly.apply(lambda x: f"{x['year']}-{x['month']:02d}", axis=1)
+    
+    # Monthly Income vs Expenses Line Chart
+    st.subheader("Monthly Financial Trends")
+    fig_income_expenses = go.Figure()
+    fig_income_expenses.add_trace(go.Scatter(
+        x=df_monthly['month_year'], 
+        y=df_monthly['total_income'], 
+        mode='lines+markers', 
+        name='Income',
+        line=dict(color='green')
+    ))
+    fig_income_expenses.add_trace(go.Scatter(
+        x=df_monthly['month_year'], 
+        y=df_monthly['total_expenses'], 
+        mode='lines+markers', 
+        name='Expenses',
+        line=dict(color='red')
+    ))
+    fig_income_expenses.update_layout(
+        title='Monthly Income vs Expenses',
+        xaxis_title='Month',
+        yaxis_title='Amount ($)'
+    )
+    st.plotly_chart(fig_income_expenses)
+
+    # Monthly Investments Bar Chart
+    st.subheader("Monthly Investments")
+    fig_investments = go.Figure(data=[
+        go.Bar(
+            x=df_monthly['month_year'], 
+            y=df_monthly['total_investments'], 
+            marker_color='blue'
+        )
+    ])
+    fig_investments.update_layout(
+        title='Monthly Investment Amounts',
+        xaxis_title='Month',
+        yaxis_title='Investment Amount ($)'
+    )
+    st.plotly_chart(fig_investments)
+
+    # Key Monthly Metrics
+    st.subheader("Monthly Financial Metrics")
+    latest_month = df_monthly.iloc[-1]
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Monthly Income", f"${latest_month['total_income']:,.2f}")
+    
+    with col2:
+        st.metric("Monthly Expenses", f"${latest_month['total_expenses']:,.2f}")
+    
+    with col3:
+        st.metric("Monthly Investments", f"${latest_month['total_investments']:,.2f}")
+
+
 
 def main():
     st.set_page_config(page_title="Financial Tracker", page_icon=":money_with_wings:", layout="wide")
@@ -150,6 +305,8 @@ def main():
                 st.metric("Total Investments", f"${summary['total_investments']:,.2f}")
             with col4:
                 st.metric("Net Worth", f"${summary['net_worth']:,.2f}")
+
+            tracker.display_monthly_overview(st)
 
             # Expense Breakdown
             st.subheader("Expense Breakdown")
