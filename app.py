@@ -158,7 +158,7 @@ class FinancialTracker:
                     }
                 }
             },
-            {'$sort': {'_id.year': 1, '_id.month': 1}}
+            {'$sort': {'_id.year': 1, '__id.month': 1}}
         ]))
     
         # Aggregate monthly investments
@@ -183,36 +183,54 @@ class FinancialTracker:
     
         # Prepare data for visualization
         monthly_data = []
-        for exp in monthly_expenses:
+        
+        # Combine unique months from all collections
+        unique_months = set()
+        for collection in [monthly_expenses, monthly_income, monthly_investments]:
+            unique_months.update((item['_id']['year'], item['_id']['month']) for item in collection)
+        
+        for year, month in sorted(unique_months):
             month_data = {
-                'year': exp['_id']['year'],
-                'month': exp['_id']['month'],
-                'total_expenses': exp['total_expenses'],
+                'year': year,
+                'month': month,
+                'total_expenses': 0,
                 'total_income': 0,
                 'total_investments': 0
             }
             
+            # Match expenses
+            matching_expense = next((exp for exp in monthly_expenses 
+                                      if exp['_id']['year'] == year and 
+                                      exp['_id']['month'] == month), None)
+            if matching_expense:
+                month_data['total_expenses'] = matching_expense['total_expenses']
+            
             # Match income
-            matching_income = next((inc for inc in monthly_income if 
-                                    inc['_id']['year'] == exp['_id']['year'] and 
-                                    inc['_id']['month'] == exp['_id']['month']), None)
+            matching_income = next((inc for inc in monthly_income 
+                                     if inc['_id']['year'] == year and 
+                                     inc['_id']['month'] == month), None)
             if matching_income:
                 month_data['total_income'] = matching_income['total_income']
             
             # Match investments
-            matching_investments = next((inv for inv in monthly_investments if 
-                                         inv['_id']['year'] == exp['_id']['year'] and 
-                                         inv['_id']['month'] == exp['_id']['month']), None)
+            matching_investments = next((inv for inv in monthly_investments 
+                                          if inv['_id']['year'] == year and 
+                                          inv['_id']['month'] == month), None)
             if matching_investments:
                 month_data['total_investments'] = matching_investments['total_investments']
             
             monthly_data.append(month_data)
     
         return monthly_data
-        
+
     def display_monthly_overview(self, st):
         """Display monthly financial overview in Streamlit"""
         monthly_data = self.generate_monthly_overview()
+        
+        # Check if monthly_data is empty
+        if not monthly_data:
+            st.warning("No monthly financial data available.")
+            return
         
         # Prepare data for plotting
         df_monthly = pd.DataFrame(monthly_data)
@@ -260,6 +278,8 @@ class FinancialTracker:
     
         # Key Monthly Metrics
         st.subheader("Monthly Financial Metrics")
+        
+        # Use the most recent month's data
         latest_month = df_monthly.iloc[-1]
         
         col1, col2, col3 = st.columns(3)
