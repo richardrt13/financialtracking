@@ -111,7 +111,7 @@ class FinancialTracker:
         total_investments = investments_aggregate[0]['total_investments'] if investments_aggregate else 0
 
         # Calculate net worth
-        net_worth = total_income - total_expenses + total_investments
+        net_worth = total_income - total_expenses - total_investments
 
         return {
             'total_expenses': total_expenses,
