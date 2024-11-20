@@ -29,7 +29,7 @@ class FinancialTracker:
     def add_expense(self, date, category, amount, description):
         """Add an expense to MongoDB"""
         expense_doc = {
-            'date': date,
+            'date': datetime.combine(date, datetime.min.time()),  # Convert date to datetime
             'category': category,
             'amount': float(amount),
             'description': description,
@@ -40,7 +40,7 @@ class FinancialTracker:
     def add_income(self, date, source, amount, description):
         """Add income to MongoDB"""
         income_doc = {
-            'date': date,
+            'date': datetime.combine(date, datetime.min.time()),  # Convert date to datetime
             'source': source,
             'amount': float(amount),
             'description': description,
@@ -51,7 +51,7 @@ class FinancialTracker:
     def add_investment(self, date, type, amount, ticker, purchase_price):
         """Add an investment to MongoDB"""
         investment_doc = {
-            'date': date,
+            'date': datetime.combine(date, datetime.min.time()),  # Convert date to datetime
             'type': type,
             'amount': float(amount),
             'ticker': ticker,
