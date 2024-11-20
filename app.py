@@ -210,68 +210,68 @@ class FinancialTracker:
     
         return monthly_data
         
-        def display_monthly_overview(self, st):
-            """Display monthly financial overview in Streamlit"""
-            monthly_data = self.generate_monthly_overview()
-            
-            # Prepare data for plotting
-            df_monthly = pd.DataFrame(monthly_data)
-            df_monthly['month_year'] = df_monthly.apply(lambda x: f"{x['year']}-{x['month']:02d}", axis=1)
-            
-            # Monthly Income vs Expenses Line Chart
-            st.subheader("Monthly Financial Trends")
-            fig_income_expenses = go.Figure()
-            fig_income_expenses.add_trace(go.Scatter(
-                x=df_monthly['month_year'], 
-                y=df_monthly['total_income'], 
-                mode='lines+markers', 
-                name='Income',
-                line=dict(color='green')
-            ))
-            fig_income_expenses.add_trace(go.Scatter(
-                x=df_monthly['month_year'], 
-                y=df_monthly['total_expenses'], 
-                mode='lines+markers', 
-                name='Expenses',
-                line=dict(color='red')
-            ))
-            fig_income_expenses.update_layout(
-                title='Monthly Income vs Expenses',
-                xaxis_title='Month',
-                yaxis_title='Amount ($)'
-            )
-            st.plotly_chart(fig_income_expenses)
+    def display_monthly_overview(self, st):
+        """Display monthly financial overview in Streamlit"""
+        monthly_data = self.generate_monthly_overview()
         
-            # Monthly Investments Bar Chart
-            st.subheader("Monthly Investments")
-            fig_investments = go.Figure(data=[
-                go.Bar(
-                    x=df_monthly['month_year'], 
-                    y=df_monthly['total_investments'], 
-                    marker_color='blue'
-                )
-            ])
-            fig_investments.update_layout(
-                title='Monthly Investment Amounts',
-                xaxis_title='Month',
-                yaxis_title='Investment Amount ($)'
-            )
-            st.plotly_chart(fig_investments)
+        # Prepare data for plotting
+        df_monthly = pd.DataFrame(monthly_data)
+        df_monthly['month_year'] = df_monthly.apply(lambda x: f"{x['year']}-{x['month']:02d}", axis=1)
         
-            # Key Monthly Metrics
-            st.subheader("Monthly Financial Metrics")
-            latest_month = df_monthly.iloc[-1]
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.metric("Monthly Income", f"${latest_month['total_income']:,.2f}")
-            
-            with col2:
-                st.metric("Monthly Expenses", f"${latest_month['total_expenses']:,.2f}")
-            
-            with col3:
-                st.metric("Monthly Investments", f"${latest_month['total_investments']:,.2f}")
+        # Monthly Income vs Expenses Line Chart
+        st.subheader("Monthly Financial Trends")
+        fig_income_expenses = go.Figure()
+        fig_income_expenses.add_trace(go.Scatter(
+            x=df_monthly['month_year'], 
+            y=df_monthly['total_income'], 
+            mode='lines+markers', 
+            name='Income',
+            line=dict(color='green')
+        ))
+        fig_income_expenses.add_trace(go.Scatter(
+            x=df_monthly['month_year'], 
+            y=df_monthly['total_expenses'], 
+            mode='lines+markers', 
+            name='Expenses',
+            line=dict(color='red')
+        ))
+        fig_income_expenses.update_layout(
+            title='Monthly Income vs Expenses',
+            xaxis_title='Month',
+            yaxis_title='Amount ($)'
+        )
+        st.plotly_chart(fig_income_expenses)
+    
+        # Monthly Investments Bar Chart
+        st.subheader("Monthly Investments")
+        fig_investments = go.Figure(data=[
+            go.Bar(
+                x=df_monthly['month_year'], 
+                y=df_monthly['total_investments'], 
+                marker_color='blue'
+            )
+        ])
+        fig_investments.update_layout(
+            title='Monthly Investment Amounts',
+            xaxis_title='Month',
+            yaxis_title='Investment Amount ($)'
+        )
+        st.plotly_chart(fig_investments)
+    
+        # Key Monthly Metrics
+        st.subheader("Monthly Financial Metrics")
+        latest_month = df_monthly.iloc[-1]
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Monthly Income", f"${latest_month['total_income']:,.2f}")
+        
+        with col2:
+            st.metric("Monthly Expenses", f"${latest_month['total_expenses']:,.2f}")
+        
+        with col3:
+            st.metric("Monthly Investments", f"${latest_month['total_investments']:,.2f}")
 
 
 
