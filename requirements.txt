@@ -5,4 +5,4 @@ pymongo
 python-dotenv
 transformers
 torch
-anthropic
+gemini
