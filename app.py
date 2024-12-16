@@ -266,7 +266,7 @@ def main():
             analysis = tracker.financial_analysis(df_transactions)
             
             if not analysis.empty:
-                # Nova função de plotagem
+                # Nova função de plotage
                 fig = tracker.plot_financial_analysis(analysis)
                 st.plotly_chart(fig)
                 
