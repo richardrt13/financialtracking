@@ -3,6 +3,4 @@ pandas
 plotly
 pymongo
 python-dotenv
-transformers
-torch
 gemini
