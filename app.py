@@ -23,7 +23,7 @@ class FinancialAdvisor:
         # Inicializa gerador de texto (opcional, pode ser substituído)
         try:
             # Try a more reliable model
-            self.text_generator = pipeline('text-generation', model='ai-forever/mGPT')
+            self.text_generator = pipeline('text-generation', model='chavinlo/alpaca-native')
         except Exception as e:
             # Fallback if model loading fails
             st.warning(f"Could not load text generation model: {e}")
