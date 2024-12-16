@@ -24,7 +24,7 @@ class FinancialAdvisor:
         # Inicializa gerador de texto (opcional, pode ser substituído)
         try:
             # Try a more reliable model
-            model_id = "lmsys/vicuna-7b-v1.3"
+            model_id = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
             self.text_generator = pipeline(
                 "text-generation",
@@ -89,12 +89,12 @@ class FinancialAdvisor:
         
         # Análise de receita vs despesas
         if metrics.get('net_cashflow', 0) < 0:
-            tips.append("🚨 Suas despesas estão superando suas receitas. Considere um corte de gastos.")
+            tips.append("🚨 Suas despesas estão superando suas receitas.")
         
         # Análise de investimentos
         investment_ratio = metrics.get('total_investments', 0) / max(metrics.get('total_revenue', 1), 1)
         if investment_ratio < 0.1:
-            tips.append("💡 Seu percentual de investimentos está baixo. Tente investir pelo menos 10% da sua renda.")
+            tips.append("💡 Seu percentual de investimentos está baixo.")
         
         # Previsão de dívidas mensais
         for month in ['Janeiro', 'Fevereiro', 'Março']:
