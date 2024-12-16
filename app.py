@@ -8,6 +8,7 @@ import os
 from transformers import pipeline
 import torch
 import numpy as np
+from anthropic import Anthropic
 
 mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
 
@@ -21,21 +22,14 @@ class FinancialAdvisor:
         """
         self.transactions_df = transactions_df
         
-        # Inicializa gerador de texto (opcional, pode ser substituído)
+        # Inicializa gerador de texto com Claude
         try:
-            # Try a more reliable model
-            model_id = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-
-            self.text_generator = pipeline(
-                "text-generation",
-                model=model_id,
-                # use_auth_token = st.secrets["use_auth_token"],
-                # model_kwargs={"torch_dtype": torch.bfloat16},
-                # device_map="auto",
-            )
+            # Use a variável de ambiente para a API key
+            self.client = Anthropic(api_key=st.secrets["api_key"]) 
+            self.text_generator = self.client.messages.create
         except Exception as e:
-            # Fallback if model loading fails
-            st.warning(f"Could not load text generation model: {e}")
+            # Fallback se a configuração falhar
+            st.warning(f"Não foi possível configurar o modelo Claude: {e}")
             self.text_generator = None
     
     def analyze_financial_health(self) -> dict:
@@ -112,14 +106,23 @@ class FinancialAdvisor:
         if self.text_generator and tips:
             try:
                 context = " ".join(tips)
-                ai_tip = self.text_generator(
-                    f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira.",
-                    max_length=100,
-                    num_return_sequences=1
-                )[0]['generated_text'].split(context)[-1].strip()
+                response = self.text_generator(
+                    model="claude-3-haiku-20240307",
+                    max_tokens=100,
+                    messages=[
+                        {
+                            "role": "user", 
+                            "content": f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira em até 3 linhas."
+                        }
+                    ]
+                )
+                
+                ai_tip = response.content[0].text
                 tips.append(f"🤖 AI Tip Avançada: {ai_tip}")
             except Exception as e:
                 st.warning(f"Geração de dica de IA avançada falhou: {e}")
+        
+        return tips[:5]
         
         # Backup tips
         if not tips:
