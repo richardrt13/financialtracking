@@ -202,30 +202,7 @@ class FinancialTracker:
         
         return fig
     
-    # Na função main(), substitua o código de plotagem por:
-    elif choice == "Análise Financeira":
-        st.subheader("📊 Consolidado Financeiro")
-        
-        # Seleção de ano para análise
-        selected_year = st.selectbox("Selecione o Ano", 
-            list(range(datetime.now().year, 2019, -1)))
-        
-        df_transactions = tracker.get_transactions(selected_year)
-        
-        if not df_transactions.empty:
-            analysis = tracker.financial_analysis(df_transactions)
-            
-            if not analysis.empty:
-                # Nova função de plotagem
-                fig = plot_financial_analysis(analysis)
-                st.plotly_chart(fig)
-                
-                # Adiciona tabela de resumo
-                st.dataframe(analysis)
-            else:
-                st.warning("Sem dados para análise")
-        else:
-            st.warning("Nenhuma transação registrada")
+    
 
 def check_mongodb_connection():
     """
@@ -289,15 +266,11 @@ def main():
             analysis = tracker.financial_analysis(df_transactions)
             
             if not analysis.empty:
-                # Gráfico de barras
-                fig = px.bar(analysis.reset_index(), 
-                             x='month', 
-                             y=['Receita', 'Despesa', 'Net'],
-                             title=f"Resumo Financeiro - {selected_year}",
-                             labels={'value': 'Valor', 'month': 'Mês'},
-                             barmode='group')
+                # Nova função de plotagem
+                fig = plot_financial_analysis(analysis)
                 st.plotly_chart(fig)
                 
+                # Adiciona tabela de resumo
                 st.dataframe(analysis)
             else:
                 st.warning("Sem dados para análise")
