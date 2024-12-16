@@ -331,8 +331,9 @@ def main():
         st.subheader("📊 Consolidado Financeiro")
         
         # Seleção de ano para análise
-        selected_year = st.selectbox("Selecione o Ano", 
-            list(range(datetime.now().year, 2019, -1)))
+        current_year = datetime.now().year 
+        options = [current_year, current_year + 1] + list(range(current_year - 1, 2019, -1)) 
+        selected_year = st.selectbox("Selecione o Ano", options)
         
         df_transactions = tracker.get_transactions(selected_year)
         
