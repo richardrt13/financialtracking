@@ -267,7 +267,7 @@ def main():
             
             if not analysis.empty:
                 # Nova função de plotagem
-                fig = plot_financial_analysis(analysis)
+                fig = tracker.plot_financial_analysis(analysis)
                 st.plotly_chart(fig)
                 
                 # Adiciona tabela de resumo
