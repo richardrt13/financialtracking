@@ -175,7 +175,7 @@ class FinancialTracker:
         summary['Despesa'] = summary.get('Despesa', pd.Series([0]*12, index=meses_ordem))
         summary['Net'] = summary['Receita'] - summary['Despesa']
     
-    return summary
+        return summary
 
     # Função de plotagem atualizada na interface Streamlit
     def plot_financial_analysis(analysis):
