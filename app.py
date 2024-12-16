@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from datetime import datetime
 import os
 from transformers import pipeline
+import torch
 import numpy as np
 
 mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
