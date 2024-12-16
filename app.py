@@ -28,7 +28,7 @@ class FinancialAdvisor:
             self.text_generator = transformers.pipeline(
                 "text-generation",
                 model=model_id,
-                use_auth_token = st.secrets["use_auth_token"]
+                use_auth_token = st.secrets["use_auth_token"],
                 model_kwargs={"torch_dtype": torch.bfloat16},
                 device_map="auto",
             )
