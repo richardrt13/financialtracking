@@ -41,11 +41,13 @@ class FinancialAdvisor:
         
         # Calcula métricas
         metrics = {
-            'total_revenue': monthly_summary.get('Receita', 0).sum(),
-            'total_expenses': monthly_summary.get('Despesa', 0).sum(),
-            'total_investments': monthly_summary.get('Investimento', 0).sum(),
-            'net_cashflow': monthly_summary.get('Receita', 0).sum() - monthly_summary.get('Despesa', 0).sum()
+            'total_revenue': monthly_summary.get('Receita', pd.Series(0, index=monthly_summary.index)).sum(),
+            'total_expenses': monthly_summary.get('Despesa', pd.Series(0, index=monthly_summary.index)).sum(),
+            'total_investments': monthly_summary.get('Investimento', pd.Series(0, index=monthly_summary.index)).sum(),
+            'net_cashflow': monthly_summary.get('Receita', pd.Series(0, index=monthly_summary.index)).sum() - 
+                            monthly_summary.get('Despesa', pd.Series(0, index=monthly_summary.index)).sum()
         }
+
         
         return metrics
     
