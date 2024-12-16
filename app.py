@@ -22,8 +22,11 @@ class FinancialAdvisor:
         
         # Inicializa gerador de texto (opcional, pode ser substituído)
         try:
-            self.text_generator = pipeline('text-generation', model='gpt2')
-        except:
+            # Try a more reliable model
+            self.text_generator = pipeline('text-generation', model='distilgpt2')
+        except Exception as e:
+            # Fallback if model loading fails
+            st.warning(f"Could not load text generation model: {e}")
             self.text_generator = None
     
     def analyze_financial_health(self) -> dict:
@@ -96,12 +99,13 @@ class FinancialAdvisor:
             try:
                 context = " ".join(tips)
                 ai_tip = self.text_generator(
-                    f"Considerando estas situações financeiras: {context}. Dê uma dica financeira concisa:", 
-                    max_length=100
-                )[0]['generated_text']
-                tips.append(f"🤖 Dica de IA: {ai_tip}")
-            except:
-                pass
+                    f"Financial advice based on: {context}", 
+                    max_length=50,
+                    num_return_sequences=1
+                )[0]['generated_text'].split(context)[-1].strip()
+                tips.append(f"🤖 AI Tip: {ai_tip}")
+            except Exception as e:
+                st.warning(f"AI tip generation failed: {e}")
         
         # Dicas genéricas de backup
         if not tips:
