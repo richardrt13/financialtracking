@@ -5,8 +5,8 @@ import plotly.graph_objects as go
 from pymongo import MongoClient
 from datetime import datetime
 import os
-from transformers import pipeline
-import torch
+# from transformers import pipeline
+# import torch
 import numpy as np
 from gemini import GeminiClient  
 
