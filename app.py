@@ -8,7 +8,7 @@ import os
 from transformers import pipeline
 import torch
 import numpy as np
-from anthropic import Anthropic
+from gemini import GeminiClient  
 
 mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
 
@@ -22,15 +22,14 @@ class FinancialAdvisor:
         """
         self.transactions_df = transactions_df
         
-        # Inicializa gerador de texto com Claude
+        # Inicializa gerador de texto com Gemini 1.5 Flash
         try:
             # Use a variável de ambiente para a API key
-            self.client = Anthropic(api_key=st.secrets["api_key"]) 
-            self.text_generator = self.client.messages.create
+            self.client = GeminiClient(api_key=st.secrets["api_key"])
         except Exception as e:
             # Fallback se a configuração falhar
-            st.warning(f"Não foi possível configurar o modelo Claude: {e}")
-            self.text_generator = None
+            st.warning(f"Não foi possível configurar o modelo Gemini: {e}")
+            self.client = None
     
     def analyze_financial_health(self) -> dict:
         if self.transactions_df.empty:
@@ -103,21 +102,14 @@ class FinancialAdvisor:
                 tips.append("💰 Sua taxa de poupança está baixa. Tente economizar pelo menos 10-20% da renda.")
         
         # Advanced AI-powered tips (if text generator available)
-        if self.text_generator and tips:
+        if self.client and tips:
             try:
                 context = " ".join(tips)
-                response = self.text_generator(
-                    model="claude-3-haiku-20240307",
-                    max_tokens=100,
-                    messages=[
-                        {
-                            "role": "user", 
-                            "content": f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira em até 3 linhas."
-                        }
-                    ]
+                response = self.client.generate(
+                    prompt=f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira em até 3 linhas.",
+                    max_tokens=100
                 )
-                
-                ai_tip = response.content[0].text
+                ai_tip = response["choices"][0]["text"].strip()
                 tips.append(f"🤖 AI Tip Avançada: {ai_tip}")
             except Exception as e:
                 st.warning(f"Geração de dica de IA avançada falhou: {e}")
