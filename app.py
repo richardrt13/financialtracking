@@ -178,7 +178,7 @@ class FinancialTracker:
         return summary
 
     # Função de plotagem atualizada na interface Streamlit
-    def plot_financial_analysis(analysis):
+    def plot_financial_analysis(self, analysis):
         """
         Cria gráfico de análise financeira com tratamento de dados
         """
