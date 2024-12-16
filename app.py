@@ -154,26 +154,26 @@ class FinancialTracker:
         return df
     
     def financial_analysis(self, df):
-    """
-    Análise financeira consolidada com tratamento de dados
-    """
-    if df.empty:
-        return pd.DataFrame()
-    
-    # Garante que todos os meses estejam presentes
-    meses_ordem = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-    
-    # Agrupa por mês e tipo, preenchendo com zero para meses sem transações
-    summary = df.groupby(['month', 'type'])['value'].sum().unstack(fill_value=0)
-    
-    # Reordena os meses
-    summary = summary.reindex(meses_ordem)
-    
-    # Calcula Net (preenchendo com zero se não existir)
-    summary['Receita'] = summary.get('Receita', pd.Series([0]*12, index=meses_ordem))
-    summary['Despesa'] = summary.get('Despesa', pd.Series([0]*12, index=meses_ordem))
-    summary['Net'] = summary['Receita'] - summary['Despesa']
+        """
+        Análise financeira consolidada com tratamento de dados
+        """
+        if df.empty:
+            return pd.DataFrame()
+        
+        # Garante que todos os meses estejam presentes
+        meses_ordem = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+        
+        # Agrupa por mês e tipo, preenchendo com zero para meses sem transações
+        summary = df.groupby(['month', 'type'])['value'].sum().unstack(fill_value=0)
+        
+        # Reordena os meses
+        summary = summary.reindex(meses_ordem)
+        
+        # Calcula Net (preenchendo com zero se não existir)
+        summary['Receita'] = summary.get('Receita', pd.Series([0]*12, index=meses_ordem))
+        summary['Despesa'] = summary.get('Despesa', pd.Series([0]*12, index=meses_ordem))
+        summary['Net'] = summary['Receita'] - summary['Despesa']
     
     return summary
 
