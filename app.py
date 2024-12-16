@@ -154,15 +154,78 @@ class FinancialTracker:
         return df
     
     def financial_analysis(self, df):
+    """
+    Análise financeira consolidada com tratamento de dados
+    """
+    if df.empty:
+        return pd.DataFrame()
+    
+    # Garante que todos os meses estejam presentes
+    meses_ordem = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+    
+    # Agrupa por mês e tipo, preenchendo com zero para meses sem transações
+    summary = df.groupby(['month', 'type'])['value'].sum().unstack(fill_value=0)
+    
+    # Reordena os meses
+    summary = summary.reindex(meses_ordem)
+    
+    # Calcula Net (preenchendo com zero se não existir)
+    summary['Receita'] = summary.get('Receita', pd.Series([0]*12, index=meses_ordem))
+    summary['Despesa'] = summary.get('Despesa', pd.Series([0]*12, index=meses_ordem))
+    summary['Net'] = summary['Receita'] - summary['Despesa']
+    
+    return summary
+
+    # Função de plotagem atualizada na interface Streamlit
+    def plot_financial_analysis(analysis):
         """
-        Análise financeira consolidada
+        Cria gráfico de análise financeira com tratamento de dados
         """
-        if df.empty:
-            return pd.DataFrame()
+        # Prepara dados para plotagem
+        plot_data = analysis.reset_index()
         
-        summary = df.groupby(['month', 'type'])['value'].sum().unstack()
-        summary['Net'] = summary.get('Receita', 0) - summary.get('Despesa', 0)
-        return summary
+        # Cria figura
+        fig = px.bar(plot_data, 
+                     x='month', 
+                     y=['Receita', 'Despesa', 'Net'],
+                     title=f"Resumo Financeiro",
+                     labels={'value': 'Valor', 'month': 'Mês', 'variable': 'Tipo'},
+                     barmode='group')
+        
+        # Personaliza layout
+        fig.update_layout(
+            xaxis_title='Mês',
+            yaxis_title='Valor (R$)',
+            legend_title='Tipo de Transação'
+        )
+        
+        return fig
+    
+    # Na função main(), substitua o código de plotagem por:
+    elif choice == "Análise Financeira":
+        st.subheader("📊 Consolidado Financeiro")
+        
+        # Seleção de ano para análise
+        selected_year = st.selectbox("Selecione o Ano", 
+            list(range(datetime.now().year, 2019, -1)))
+        
+        df_transactions = tracker.get_transactions(selected_year)
+        
+        if not df_transactions.empty:
+            analysis = tracker.financial_analysis(df_transactions)
+            
+            if not analysis.empty:
+                # Nova função de plotagem
+                fig = plot_financial_analysis(analysis)
+                st.plotly_chart(fig)
+                
+                # Adiciona tabela de resumo
+                st.dataframe(analysis)
+            else:
+                st.warning("Sem dados para análise")
+        else:
+            st.warning("Nenhuma transação registrada")
 
 def check_mongodb_connection():
     """
