@@ -102,26 +102,27 @@ class FinancialAdvisor:
                 tips.append("💰 Sua taxa de poupança está baixa. Tente economizar pelo menos 10-20% da renda.")
         
         # Advanced AI-powered tips (if text generator available)
-        if self.model and tips:
-            try:
-                context = " ".join(tips)
-                response = self.model.generate_content(f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira em até 3 linhas.")
-                ai_tip = response.text.strip()
-                tips.append(f"🤖 AI Tip Avançada: {ai_tip}")
-            except Exception as e:
-                st.warning(f"Geração de dica de IA avançada falhou: {e}")
-        
-        return tips[:5]
-        
-        # Backup tips
-        if not tips:
-            tips = [
-                "💡 Seu perfil financeiro parece estável. Continue monitorando e ajustando seu orçamento.",
-                "🏦 Considere diversificar suas fontes de renda e investimentos.",
-                "📈 Mantenha um registro detalhado e faça revisões periódicas."
-            ]
-        
-        return tips[:5]
+        if st.button("Dica do HeroAI"):
+            if self.model and tips:
+                try:
+                    context = " ".join(tips)
+                    response = self.model.generate_content(f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira em até 3 linhas.")
+                    ai_tip = response.text.strip()
+                    tips.append(f"🤖 HeroAI: {ai_tip}")
+                except Exception as e:
+                    st.warning(f"Geração de dica de IA avançada falhou: {e}")
+            
+            return tips[:5]
+            
+            # Backup tips
+            if not tips:
+                tips = [
+                    "💡 Seu perfil financeiro parece estável. Continue monitorando e ajustando seu orçamento.",
+                    "🏦 Considere diversificar suas fontes de renda e investimentos.",
+                    "📈 Mantenha um registro detalhado e faça revisões periódicas."
+                ]
+            
+            return tips[:5]
 
 class FinancialTracker:
     def __init__(self):
@@ -296,17 +297,29 @@ def main():
         st.subheader("📝 Registrar Transações")
         
         col1, col2 = st.columns(2)
+
+        with col2:
+            year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
+            type_transaction = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'])
         
         with col1:
             month = st.selectbox("Mês", 
                 ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
             
-            category = st.text_input("Categoria (ex: Salário, Alimentação)")
-        
-        with col2:
-            year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
-            type_transaction = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'])
+            if type_transaction == 'Receita':
+                category = st.selectbox("Categoria", 
+                    ['Salário', 'Outros'])
+                
+            elif type_transaction == 'Despesa': 
+                category = st.selectbox("Categoria", 
+                    ['Internet', 'Tv a Cabo', 'Manutenção do carro', 'Combustível', 'Financiamento', 
+                     'Aluguel', 'Condomínio', 'Mercado'])
+
+            elif type_transaction == 'Investimento': 
+                category = st.selectbox("Categoria", 
+                    ['Renda Fixa', 'Renda Variável'])
+
         
         value = st.number_input("Valor", min_value=0.0, format="%.2f")
         
