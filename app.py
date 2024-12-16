@@ -39,30 +39,33 @@ class FinancialAdvisor:
             self.text_generator = None
     
     def analyze_financial_health(self) -> dict:
-        """
-        Analisa a saúde financeira com métricas importantes
-        
-        Returns:
-            Dict com métricas financeiras
-        """
         if self.transactions_df.empty:
             return {}
         
-        # Agrupa por mês e tipo de transação
-        monthly_summary = self.transactions_df.groupby(['month', 'type'])['value'].sum().unstack()
+        # Expanded monthly summary
+        monthly_summary = self.transactions_df.groupby(['month', 'type'])['value'].sum().unstack(fill_value=0)
         
-        # Calcula métricas
+        # Advanced metrics calculation
         metrics = {
-            'total_revenue': monthly_summary.get('Receita', pd.Series(0, index=monthly_summary.index)).sum(),
-            'total_expenses': monthly_summary.get('Despesa', pd.Series(0, index=monthly_summary.index)).sum(),
-            'total_investments': monthly_summary.get('Investimento', pd.Series(0, index=monthly_summary.index)).sum(),
-            'net_cashflow': monthly_summary.get('Receita', pd.Series(0, index=monthly_summary.index)).sum() - 
-                            monthly_summary.get('Despesa', pd.Series(0, index=monthly_summary.index)).sum()
+            'total_revenue': monthly_summary.get('Receita', pd.Series(0)).sum(),
+            'total_expenses': monthly_summary.get('Despesa', pd.Series(0)).sum(),
+            'total_investments': monthly_summary.get('Investimento', pd.Series(0)).sum(),
+            'net_cashflow': monthly_summary.get('Receita', pd.Series(0)).sum() - 
+                            monthly_summary.get('Despesa', pd.Series(0)).sum(),
+            
+            # New advanced metrics
+            'average_monthly_revenue': monthly_summary.get('Receita', pd.Series(0)).mean(),
+            'average_monthly_expenses': monthly_summary.get('Despesa', pd.Series(0)).mean(),
+            'investment_ratio': monthly_summary.get('Investimento', pd.Series(0)).sum() / 
+                                max(monthly_summary.get('Receita', pd.Series(0)).sum(), 1) * 100,
+            'expense_to_income_ratio': monthly_summary.get('Despesa', pd.Series(0)).sum() / 
+                                        max(monthly_summary.get('Receita', pd.Series(0)).sum(), 1) * 100,
+            'revenue_volatility': monthly_summary.get('Receita', pd.Series(0)).std() / 
+                                   max(monthly_summary.get('Receita', pd.Series(0)).mean(), 1) * 100
         }
-
         
         return metrics
-    
+        
     def predict_monthly_debt(self, month: str) -> float:
         """
         Prevê dívidas para um mês específico
@@ -78,53 +81,55 @@ class FinancialAdvisor:
         return expenses
     
     def generate_contextual_tips(self) -> list:
-        """
-        Gera dicas financeiras contextuais baseadas na análise de dados
-        
-        Returns:
-            List[str]: Dicas financeiras personalizadas
-        """
         metrics = self.analyze_financial_health()
         tips = []
         
-        # Análise de receita vs despesas
-        if metrics.get('net_cashflow', 0) < 0:
-            tips.append("🚨 Suas despesas estão superando suas receitas.")
+        # Investment Analysis
+        if metrics['investment_ratio'] < 10:
+            tips.append("🚨 Seu percentual de investimentos está muito baixo. Recomenda-se investir pelo menos 10-20% da renda.")
+        elif metrics['investment_ratio'] > 30:
+            tips.append("💡 Você está investindo muito! Verifique se não está comprometendo sua liquidez.")
         
-        # Análise de investimentos
-        investment_ratio = metrics.get('total_investments', 0) / max(metrics.get('total_revenue', 1), 1)
-        if investment_ratio < 0.1:
-            tips.append("💡 Seu percentual de investimentos está baixo.")
+        # Expense Management
+        if metrics['expense_to_income_ratio'] > 70:
+            tips.append("⚠️ Suas despesas consomem mais de 70% da sua renda. É crucial cortar gastos e aumentar a eficiência financeira.")
+        elif metrics['expense_to_income_ratio'] > 50:
+            tips.append("🔍 Suas despesas estão próximas de 50% da renda. Faça uma revisão detalhada dos gastos.")
         
-        # Previsão de dívidas mensais
-        for month in ['Janeiro', 'Fevereiro', 'Março']:
-            predicted_debt = self.predict_monthly_debt(month)
-            if predicted_debt > metrics.get('total_revenue', 0) * 0.5:
-                tips.append(f"⚠️ Sua previsão de despesas para {month} está muito alta (mais de 50% da sua receita).")
-                tips.append(f"🐖 Recomendo criar uma estratégia de economia nos meses anteriores para cobrir as despesas de {month}.")
+        # Revenue Stability
+        if metrics['revenue_volatility'] > 30:
+            tips.append("📊 Sua renda apresenta alta variabilidade. Considere fontes de renda mais estáveis ou criar um fundo de emergência.")
         
-        # Geração avançada de dicas com IA (se modelo disponível)
-        if self.text_generator and len(tips) > 0:
+        # Savings and Emergency Fund
+        if metrics['net_cashflow'] < 0:
+            tips.append("🐖 Você está gastando mais do que ganha. Priorize a criação de um orçamento e corte de despesas não essenciais.")
+        else:
+            savings_rate = metrics['net_cashflow'] / max(metrics['total_revenue'], 1) * 100
+            if savings_rate < 10:
+                tips.append("💰 Sua taxa de poupança está baixa. Tente economizar pelo menos 10-20% da renda.")
+        
+        # Advanced AI-powered tips (if text generator available)
+        if self.text_generator and tips:
             try:
                 context = " ".join(tips)
                 ai_tip = self.text_generator(
-                    f"Considerando esta situação financeira: {context}. Dê uma dica",
-                    max_length=50,
+                    f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira.",
+                    max_length=100,
                     num_return_sequences=1
                 )[0]['generated_text'].split(context)[-1].strip()
-                tips.append(f"🤖 AI Tip: {ai_tip}")
+                tips.append(f"🤖 AI Tip Avançada: {ai_tip}")
             except Exception as e:
-                st.warning(f"AI tip generation failed: {e}")
+                st.warning(f"Geração de dica de IA avançada falhou: {e}")
         
-        # Dicas genéricas de backup
+        # Backup tips
         if not tips:
             tips = [
-                "💰 Mantenha um registro detalhado de suas finanças.",
-                "🏦 Crie uma reserva de emergência equivalente a 3-6 meses de despesas.",
-                "📊 Revise seus gastos mensalmente e ajuste seu orçamento."
+                "💡 Seu perfil financeiro parece estável. Continue monitorando e ajustando seu orçamento.",
+                "🏦 Considere diversificar suas fontes de renda e investimentos.",
+                "📈 Mantenha um registro detalhado e faça revisões periódicas."
             ]
         
-        return tips[:5]  # Limita para 5 dicas
+        return tips[:5]
 
 class FinancialTracker:
     def __init__(self):
