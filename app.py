@@ -8,6 +8,8 @@ import os
 from transformers import pipeline
 import numpy as np
 
+mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
+
 class FinancialAdvisor:
     def __init__(self, transactions_df: pd.DataFrame):
         """
