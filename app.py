@@ -5,8 +5,6 @@ import plotly.graph_objects as go
 from pymongo import MongoClient
 from datetime import datetime
 import os
-# from transformers import pipeline
-# import torch
 import numpy as np
 import google.generativeai as genai 
 
