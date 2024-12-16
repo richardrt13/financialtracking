@@ -2,4 +2,6 @@ streamlit
 pandas
 plotly
 pymongo
-dnspython
+python-dotenv
+transformers
+torch
