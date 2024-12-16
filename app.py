@@ -24,7 +24,7 @@ class FinancialAdvisor:
         # Inicializa gerador de texto (opcional, pode ser substituído)
         try:
             # Try a more reliable model
-            model_id = "google/flan-t5-large"
+            model_id = "lmsys/vicuna-7b-v1.3"
 
             self.text_generator = pipeline(
                 "text-generation",
