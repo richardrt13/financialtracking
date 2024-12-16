@@ -25,7 +25,7 @@ class FinancialAdvisor:
             # Try a more reliable model
             model_id = "meta-llama/Llama-3.3-70B-Instruct"
 
-            self.text_generator = transformers.pipeline(
+            self.text_generator = pipeline(
                 "text-generation",
                 model=model_id,
                 use_auth_token = st.secrets["use_auth_token"],
