@@ -8,7 +8,7 @@ import os
 # from transformers import pipeline
 # import torch
 import numpy as np
-from gemini import GeminiClient  
+import google.generativeai as genai 
 
 mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
 
@@ -24,12 +24,12 @@ class FinancialAdvisor:
         
         # Inicializa gerador de texto com Gemini 1.5 Flash
         try:
-            # Use a variável de ambiente para a API key
-            self.client = GeminiClient(api_key=st.secrets["api_key"])
+            genai.configure(api_key=st.secrets["api_key"])
+            self.model = genai.GenerativeModel("gemini-1.5-flash")
         except Exception as e:
             # Fallback se a configuração falhar
             st.warning(f"Não foi possível configurar o modelo Gemini: {e}")
-            self.client = None
+            self.model = None
     
     def analyze_financial_health(self) -> dict:
         if self.transactions_df.empty:
@@ -102,14 +102,11 @@ class FinancialAdvisor:
                 tips.append("💰 Sua taxa de poupança está baixa. Tente economizar pelo menos 10-20% da renda.")
         
         # Advanced AI-powered tips (if text generator available)
-        if self.client and tips:
+        if self.model and tips:
             try:
                 context = " ".join(tips)
-                response = self.client.generate(
-                    prompt=f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira em até 3 linhas.",
-                    max_tokens=100
-                )
-                ai_tip = response["choices"][0]["text"].strip()
+                response = self.model.generate_content(f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira em até 3 linhas.")
+                ai_tip = response.text.strip()
                 tips.append(f"🤖 AI Tip Avançada: {ai_tip}")
             except Exception as e:
                 st.warning(f"Geração de dica de IA avançada falhou: {e}")
