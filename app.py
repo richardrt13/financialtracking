@@ -23,7 +23,7 @@ class FinancialAdvisor:
         # Inicializa gerador de texto (opcional, pode ser substituído)
         try:
             # Try a more reliable model
-            self.text_generator = pipeline('text2text-generation', model='google/flan-t5-base')
+            self.text_generator = pipeline('text-generation', model='neuralmind/gpt-2')
         except Exception as e:
             # Fallback if model loading fails
             st.warning(f"Could not load text generation model: {e}")
