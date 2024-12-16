@@ -201,6 +201,55 @@ class FinancialTracker:
         )
         
         return fig
+        # Adicione estes métodos à classe FinancialTracker
+    def get_transaction_by_id(self, transaction_id):
+        """
+        Recupera uma transação específica pelo seu ID
+        """
+        from bson.objectid import ObjectId
+        
+        transaction = self.transactions_collection.find_one({'_id': ObjectId(transaction_id)})
+        return transaction
+    
+    def update_transaction(self, transaction_id, updates):
+        """
+        Atualiza uma transação existente
+        
+        Args:
+            transaction_id (str): ID da transação no MongoDB
+            updates (dict): Dicionário com campos a serem atualizados
+        """
+        from bson.objectid import ObjectId
+        
+        # Remove o ID se estiver presente nos updates para evitar erro
+        updates.pop('_id', None)
+        
+        # Atualiza a transação
+        result = self.transactions_collection.update_one(
+            {'_id': ObjectId(transaction_id)}, 
+            {'$set': updates}
+        )
+        return result.modified_count > 0
+    
+    def delete_transaction(self, transaction_id):
+        """
+        Deleta uma transação específica
+        
+        Args:
+            transaction_id (str): ID da transação no MongoDB
+        """
+        from bson.objectid import ObjectId
+        
+        result = self.transactions_collection.delete_one({'_id': ObjectId(transaction_id)})
+        return result.deleted_count > 0
+
+    def get_transactions_ids(self, year=None):
+        """
+        Recupera os IDs das transações
+        """
+        query = {} if year is None else {'year': year}
+        transactions = list(self.transactions_collection.find(query, {'_id': 1}))
+        return [str(trans['_id']) for trans in transactions]
     
     
 
@@ -228,7 +277,7 @@ def main():
     tracker = FinancialTracker()
     
     # Menu de navegação
-    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras"]
+    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", "Gerenciar Transações"]
     choice = st.sidebar.selectbox("Menu", menu)
     
     if choice == "Lançamentos":
@@ -292,6 +341,83 @@ def main():
                 st.write(f"{i}. {tip}")
         else:
             st.warning("Adicione algumas transações para receber dicas personalizadas.")
+
+    elif choice == "Gerenciar Transações":
+        st.subheader("📋 Gerenciar Transações")
+        
+        # Seleção de ano para visualização
+        selected_year = st.selectbox("Selecione o Ano", 
+            list(range(datetime.now().year, 2019, -1)))
+        
+        # Recupera transações do ano selecionado
+        df_transactions = tracker.get_transactions(selected_year)
+        
+        if not df_transactions.empty:
+            # Adiciona coluna de ID para referência
+            df_transactions['_id'] = tracker.get_transactions_ids(selected_year)
+            
+            # Exibe tabela editável
+            edited_df = st.data_editor(
+                df_transactions, 
+                column_config={
+                    '_id': st.column_config.TextColumn("ID", disabled=True),
+                    'month': st.column_config.SelectboxColumn(
+                        "Mês", 
+                        options=['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+                    ),
+                    'type': st.column_config.SelectboxColumn(
+                        "Tipo", 
+                        options=['Receita', 'Despesa', 'Investimento']
+                    )
+                },
+                disabled=["year", "created_at"],
+                num_rows="dynamic"
+            )
+            
+            # Botões de ação
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("💾 Salvar Alterações"):
+                    # Processa alterações
+                    for index, row in edited_df.iterrows():
+                        # Verifica se a linha foi modificada
+                        original_row = df_transactions.iloc[index]
+                        
+                        # Prepara dicionário de atualizações
+                        updates = {}
+                        for col in ['month', 'category', 'type', 'value']:
+                            if row[col] != original_row[col]:
+                                updates[col] = row[col]
+                        
+                        # Atualiza se houver mudanças
+                        if updates:
+                            try:
+                                tracker.update_transaction(row['_id'], updates)
+                                st.success(f"Transação {row['_id']} atualizada!")
+                            except Exception as e:
+                                st.error(f"Erro ao atualizar transação: {e}")
+            
+            with col2:
+                # Coluna para exclusão de transações
+                transaction_to_delete = st.selectbox(
+                    "🗑️ Selecione Transação para Excluir", 
+                    df_transactions['_id'].tolist()
+                )
+                
+                if st.button("Excluir Transação Selecionada"):
+                    try:
+                        if tracker.delete_transaction(transaction_to_delete):
+                            st.success(f"Transação {transaction_to_delete} excluída!")
+                            # Atualiza a página para refletir a exclusão
+                            st.experimental_rerun()
+                        else:
+                            st.error("Falha ao excluir transação")
+                    except Exception as e:
+                        st.error(f"Erro ao excluir transação: {e}")
+        else:
+            st.warning("Nenhuma transação encontrada para o ano selecionado")
 
 if __name__ == "__main__":
     # Verifica conexão com MongoDB
