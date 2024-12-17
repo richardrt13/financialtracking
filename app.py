@@ -326,63 +326,63 @@ def main():
             st.success("Transação adicionada com sucesso!")
     
     elif choice == "Análise Financeira":
-    st.subheader("📊 Consolidado Financeiro")
-    
-    # Filtros mais flexíveis
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        current_year = datetime.now().year 
-        options = [current_year, current_year + 1] + list(range(current_year - 1, 2019, -1)) 
-        selected_year = st.selectbox("Ano", options)
-    
-    with col2:
-        selected_month = st.selectbox("Mês", 
-            ['Todos'] + 
-            ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
-    
-    # Recupera transações com filtros
-    df_transactions = tracker.get_transactions(selected_year)
-    
-    if selected_month != 'Todos':
-        df_transactions = df_transactions[df_transactions['month'] == selected_month]
-    
-    if not df_transactions.empty:
-        # Sumário de métricas
-        st.subheader("Resumo Financeiro")
+        st.subheader("📊 Consolidado Financeiro")
         
-        col1, col2, col3 = st.columns(3)
+        # Filtros mais flexíveis
+        col1, col2 = st.columns(2)
         
         with col1:
-            total_receita = df_transactions[df_transactions['type'] == 'Receita']['value'].sum()
-            st.metric(label="Total Receitas", value=f"R$ {total_receita:.2f}")
+            current_year = datetime.now().year 
+            options = [current_year, current_year + 1] + list(range(current_year - 1, 2019, -1)) 
+            selected_year = st.selectbox("Ano", options)
         
         with col2:
-            total_despesa = df_transactions[df_transactions['type'] == 'Despesa']['value'].sum()
-            st.metric(label="Total Despesas", value=f"R$ {total_despesa:.2f}")
+            selected_month = st.selectbox("Mês", 
+                ['Todos'] + 
+                ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
         
-        with col3:
-            saldo_liquido = total_receita - total_despesa
-            st.metric(label="Saldo Líquido", 
-                      value=f"R$ {saldo_liquido:.2f}", 
-                      delta_color="inverse",
-                      delta=f"{(saldo_liquido/max(total_receita, 1)*100):.2f}%")
+        # Recupera transações com filtros
+        df_transactions = tracker.get_transactions(selected_year)
         
-        # Opção para mostrar gráfico
-        if st.checkbox("Mostrar Gráfico Detalhado"):
-            analysis = tracker.financial_analysis(df_transactions)
-            fig = tracker.plot_financial_analysis(analysis)
-            st.plotly_chart(fig)
+        if selected_month != 'Todos':
+            df_transactions = df_transactions[df_transactions['month'] == selected_month]
         
-        # Detalhamento por categoria
-        st.subheader("Detalhamento por Categoria")
-        
-        categoria_summary = df_transactions.groupby(['type', 'category'])['value'].sum().reset_index()
-        st.dataframe(categoria_summary.style.format({'value': 'R$ {:.2f}'}))
-        
-    else:
-        st.warning("Nenhuma transação registrada para o período selecionado")
+        if not df_transactions.empty:
+            # Sumário de métricas
+            st.subheader("Resumo Financeiro")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                total_receita = df_transactions[df_transactions['type'] == 'Receita']['value'].sum()
+                st.metric(label="Total Receitas", value=f"R$ {total_receita:.2f}")
+            
+            with col2:
+                total_despesa = df_transactions[df_transactions['type'] == 'Despesa']['value'].sum()
+                st.metric(label="Total Despesas", value=f"R$ {total_despesa:.2f}")
+            
+            with col3:
+                saldo_liquido = total_receita - total_despesa
+                st.metric(label="Saldo Líquido", 
+                          value=f"R$ {saldo_liquido:.2f}", 
+                          delta_color="inverse",
+                          delta=f"{(saldo_liquido/max(total_receita, 1)*100):.2f}%")
+            
+            # Opção para mostrar gráfico
+            if st.checkbox("Mostrar Gráfico Detalhado"):
+                analysis = tracker.financial_analysis(df_transactions)
+                fig = tracker.plot_financial_analysis(analysis)
+                st.plotly_chart(fig)
+            
+            # Detalhamento por categoria
+            st.subheader("Detalhamento por Categoria")
+            
+            categoria_summary = df_transactions.groupby(['type', 'category'])['value'].sum().reset_index()
+            st.dataframe(categoria_summary.style.format({'value': 'R$ {:.2f}'}))
+            
+        else:
+            st.warning("Nenhuma transação registrada para o período selecionado")
     
     elif choice == "Dicas Financeiras":
         st.subheader("💡 Dicas de Otimização")
