@@ -352,21 +352,17 @@ def main():
             # Sumário de métricas
             st.subheader("Resumo Financeiro")
             
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2 = st.columns(2)
             
             with col1:
                 total_receita = df_transactions[df_transactions['type'] == 'Receita']['value'].sum()
                 st.metric(label="Total Receitas", value=f"R$ {total_receita:.2f}")
-            
-            with col2:
                 total_despesa = df_transactions[df_transactions['type'] == 'Despesa']['value'].sum()
                 st.metric(label="Total Despesas", value=f"R$ {total_despesa:.2f}")
 
-            with col3:
+            with col2:
                 total_investimento = df_transactions[df_transactions['type'] == 'Investimento']['value'].sum()
                 st.metric(label="Total Investimentos", value=f"R$ {total_investimento:.2f}")
-            
-            with col4:
                 saldo_liquido = total_receita - total_despesa - total_investimento
                 st.metric(label="Saldo Líquido", 
                           value=f"R$ {saldo_liquido:.2f}", 
