@@ -360,17 +360,18 @@ def main():
                 total_despesa = df_transactions[df_transactions['type'] == 'Despesa']['value'].sum()
                 st.metric(label="Total Despesas",
                           value=f"R$ {total_despesa:.2f}",
+                          delta_color="inverse",
                           delta=f"{(total_despesa/max(total_receita, 1)*100):.2f}%")
 
             with col2:
                 total_investimento = df_transactions[df_transactions['type'] == 'Investimento']['value'].sum()
                 st.metric(label="Total Investimentos", 
                           value=f"R$ {total_investimento:.2f}",
+                          delta_color="inverse",
                           delta=f"{(total_investimento/max(total_receita, 1)*100):.2f}%")
                 saldo_liquido = total_receita - total_despesa - total_investimento
                 st.metric(label="Saldo Líquido", 
                           value=f"R$ {saldo_liquido:.2f}", 
-                          delta_color="inverse",
                           delta=f"{(saldo_liquido/max(total_receita, 1)*100):.2f}%")
             
             # Opção para mostrar gráfico
