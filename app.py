@@ -282,7 +282,7 @@ class FinancialTracker:
         """
         try:
             df = pd.read_csv('https://raw.githubusercontent.com/richardrt13/Data-Science-Portifolio/main/ativos.csv')
-            return df['ticker'].tolist()
+            return df['Ticker'].tolist()
         except Exception as e:
             st.warning(f"Erro ao carregar ativos: {e}")
             return []
