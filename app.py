@@ -261,6 +261,130 @@ class FinancialTracker:
         query = {} if year is None else {'year': year}
         transactions = list(self.transactions_collection.find(query, {'_id': 1}))
         return [str(trans['_id']) for trans in transactions]
+
+class InvestmentTracker:
+    def __init__(self):
+        # Load stock tickers
+        self.stock_tickers = self.load_stock_tickers()
+        
+        # CDI rates (example values, should be updated with real data)
+        self.cdi_rates = {
+            '2023': 0.1375,  # 13.75%
+            '2024': 0.1150   # 11.50%
+        }
+    
+    def load_stock_tickers(self):
+        """
+        Load stock tickers from GitHub repository
+        """
+        try:
+            url = "https://raw.githubusercontent.com/richardrt13/Data-Science-Portifolio/main/ativos.csv"
+            df = pd.read_csv(url)
+            return df['ticker'].tolist()
+        except Exception as e:
+            st.error(f"Erro ao carregar ativos: {e}")
+            return []
+    
+    def track_stock_investment(self, ticker, quantity, purchase_price, purchase_date):
+        """
+        Track stock investment performance
+        """
+        try:
+            stock = yf.Ticker(f"{ticker}.SA")
+            
+            # Get current price
+            current_price = stock.history(period="1d")['Close'][0]
+            
+            # Calculate performance
+            total_purchase_value = quantity * purchase_price
+            total_current_value = quantity * current_price
+            performance_percentage = ((current_price - purchase_price) / purchase_price) * 100
+            
+            return {
+                'ticker': ticker,
+                'quantity': quantity,
+                'purchase_price': purchase_price,
+                'purchase_date': purchase_date,
+                'current_price': current_price,
+                'total_purchase_value': total_purchase_value,
+                'total_current_value': total_current_value,
+                'performance_percentage': performance_percentage
+            }
+        except Exception as e:
+            st.error(f"Erro ao rastrear ativo {ticker}: {e}")
+            return None
+    
+    def track_fixed_income_investment(self, investment_type, initial_investment, investment_date, cdi_percentage):
+        """
+        Track fixed-income investment performance based on CDI
+        """
+        current_date = datetime.now()
+        investment_datetime = pd.to_datetime(investment_date)
+        
+        # Calculate investment duration
+        duration_days = (current_date - investment_datetime).days
+        duration_years = duration_days / 365.25
+        
+        # Get appropriate CDI rate
+        year = str(investment_datetime.year)
+        base_cdi_rate = self.cdi_rates.get(year, 0.11)  # Default to 11% if no specific rate
+        
+        # Calculate return
+        investment_return = initial_investment * ((1 + base_cdi_rate * cdi_percentage) ** duration_years - 1)
+        
+        return {
+            'investment_type': investment_type,
+            'initial_investment': initial_investment,
+            'investment_date': investment_date,
+            'cdi_percentage': cdi_percentage,
+            'total_current_value': initial_investment + investment_return,
+            'total_return': investment_return,
+            'return_percentage': (investment_return / initial_investment) * 100
+        }
+def investment_tracking_interface(tracker):
+    """
+    Streamlit interface for investment tracking
+    """
+    st.header("📈 Registro de Investimentos")
+    
+    investment_type = st.selectbox("Tipo de Investimento", 
+                                   ["Renda Variável", "Renda Fixa"])
+    
+    if investment_type == "Renda Variável":
+        col1, col2 = st.columns(2)
+        with col1:
+            ticker = st.selectbox("Ativo", tracker.stock_tickers)
+            quantity = st.number_input("Quantidade", min_value=1)
+            purchase_price = st.number_input("Preço de Compra", min_value=0.01, format="%.2f")
+        
+        with col2:
+            purchase_date = st.date_input("Data de Compra", datetime.now())
+        
+        if st.button("Rastrear Investimento em Ações"):
+            result = tracker.track_stock_investment(ticker, quantity, purchase_price, purchase_date)
+            if result:
+                st.write("### Detalhes do Investimento")
+                st.json(result)
+    
+    else:  # Renda Fixa
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            investment_name = st.selectbox("Tipo de Investimento", 
+                ["Tesouro Direto", "CDB", "LCI", "LCA", "CRI", "CRA"])
+            initial_investment = st.number_input("Valor Inicial", min_value=0.01, format="%.2f")
+            
+        with col2:
+            investment_date = st.date_input("Data do Investimento", datetime.now())
+            cdi_percentage = st.number_input("% do CDI", min_value=0.0, max_value=200.0, value=100.0, format="%.2f")
+        
+        if st.button("Rastrear Investimento de Renda Fixa"):
+            result = tracker.track_fixed_income_investment(
+                investment_name, initial_investment, investment_date, cdi_percentage/100
+            )
+            if result:
+                st.write("### Detalhes do Investimento")
+                st.json(result)
     
     
 
@@ -288,7 +412,7 @@ def main():
     tracker = FinancialTracker()
     
     # Menu de navegação
-    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", "Gerenciar Transações"]
+    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", "Investimentos", "Gerenciar Transações"]
     choice = st.sidebar.selectbox("Menu", menu)
     
     if choice == "Lançamentos":
@@ -404,6 +528,11 @@ def main():
                 st.write(f"{i}. {tip}")
         else:
             st.warning("Adicione algumas transações para receber dicas personalizadas.")
+            
+    elif choice == "Investimentos":
+        st.subheader("📋 Gestão de investimentos")
+        investment_tracking_interface(tracker)
+    
 
     elif choice == "Gerenciar Transações":
         st.subheader("📋 Gerenciar Transações")
