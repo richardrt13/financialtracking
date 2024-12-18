@@ -4,3 +4,4 @@ plotly
 pymongo
 python-dotenv
 google-generativeai
+yfinance
