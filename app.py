@@ -6,6 +6,8 @@ from pymongo import MongoClient
 from datetime import datetime
 import os
 import numpy as np
+import yfinance as yf
+from datetime import datetime, timedelta
 import google.generativeai as genai 
 
 mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
