@@ -281,9 +281,7 @@ class FinancialTracker:
         Carrega tickers de ativos de um repositório GitHub
         """
         try:
-            url = "https://raw.githubusercontent.com/richardrt13/Data-Science-Portifolio/main/ativos.csv"
-            response = requests.get(url)
-            df = pd.read_csv(pd.StringIO(response.text))
+            df = pd.read_csv('https://raw.githubusercontent.com/richardrt13/Data-Science-Portifolio/main/ativos.csv')
             return df['ticker'].tolist()
         except Exception as e:
             st.warning(f"Erro ao carregar ativos: {e}")
