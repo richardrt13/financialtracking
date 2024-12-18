@@ -556,7 +556,7 @@ def main():
     tracker = FinancialTracker()
     
     # Menu de navegação
-    mmenu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
+    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
             "Gerenciar Transações", "Registro de Investimentos", "Gerenciar Investimentos"]
     choice = st.sidebar.selectbox("Menu", menu)
     
