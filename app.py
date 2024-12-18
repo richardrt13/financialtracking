@@ -127,15 +127,26 @@ class FinancialAdvisor:
 class FinancialTracker:
     def __init__(self):
         """
-        Inicializa a conexão com o MongoDB
+        Inicializa o rastreador financeiro com conexão ao MongoDB e carregamento de ativos
         """
-        # Usando variável de ambiente para a connection string
+        # Conexão com MongoDB
         mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
         self.client = MongoClient(mongo_uri)
         
         # Nome do banco de dados e coleção
         self.db = self.client['financial_tracker']
         self.transactions_collection = self.db['transactions']
+        self.investments_collection = self.db['investments']
+        
+        # Carregar ativos
+        self.stock_tickers = self.load_stock_tickers()
+        
+        # CDI rates (example values, should be updated with real data)
+        self.cdi_rates = {
+            '2023': 0.1375,  # 13.75%
+            '2024': 0.1150   # 11.50%
+        }
+
     
     def add_transaction(self, month, year, category, type, value):
         """
@@ -263,6 +274,135 @@ class FinancialTracker:
         query = {} if year is None else {'year': year}
         transactions = list(self.transactions_collection.find(query, {'_id': 1}))
         return [str(trans['_id']) for trans in transactions]
+        
+    def load_stock_tickers(self):
+        """
+        Carrega tickers de ativos de um repositório GitHub
+        """
+        try:
+            url = "https://raw.githubusercontent.com/richardrt13/Data-Science-Portifolio/main/ativos.csv"
+            response = requests.get(url)
+            df = pd.read_csv(pd.iotools.common.StringIO(response.text))
+            return df['ticker'].tolist()
+        except Exception as e:
+            st.warning(f"Erro ao carregar ativos: {e}")
+            return []
+    
+    def track_stock_investment(self, ticker, quantity, purchase_price, purchase_date):
+        """
+        Rastreia o desempenho de um investimento em ações
+        """
+        try:
+            stock = yf.Ticker(f"{ticker}.SA")
+            
+            # Obtém o preço atual
+            current_price = stock.history(period="1d")['Close'][0]
+            
+            # Calcula performance
+            total_purchase_value = quantity * purchase_price
+            total_current_value = quantity * current_price
+            performance_percentage = ((current_price - purchase_price) / purchase_price) * 100
+            
+            # Salva o investimento no MongoDB
+            investment = {
+                'ticker': ticker,
+                'type': 'Renda Variável',
+                'quantity': quantity,
+                'purchase_price': purchase_price,
+                'purchase_date': purchase_date,
+                'current_price': current_price,
+                'total_purchase_value': total_purchase_value,
+                'total_current_value': total_current_value,
+                'performance_percentage': performance_percentage,
+                'created_at': datetime.now()
+            }
+            
+            # Insere no MongoDB
+            self.investments_collection.insert_one(investment)
+            
+            return investment
+        
+        except Exception as e:
+            st.error(f"Erro ao rastrear ativo {ticker}: {e}")
+            return None
+    
+    def track_fixed_income_investment(self, investment_type, initial_investment, investment_date, cdi_percentage):
+        """
+        Rastreia investimentos de renda fixa baseado no CDI
+        """
+        current_date = datetime.now()
+        investment_datetime = pd.to_datetime(investment_date)
+        
+        # Calcula duração do investimento
+        duration_days = (current_date - investment_datetime).days
+        duration_years = duration_days / 365.25
+        
+        # Obtém a taxa CDI apropriada
+        year = str(investment_datetime.year)
+        base_cdi_rate = self.cdi_rates.get(year, 0.11)  # Padrão 11% se não houver taxa específica
+        
+        # Calcula retorno
+        investment_return = initial_investment * ((1 + base_cdi_rate * cdi_percentage) ** duration_years - 1)
+        
+        # Salva o investimento no MongoDB
+        investment = {
+            'investment_type': investment_type,
+            'type': 'Renda Fixa',
+            'initial_investment': initial_investment,
+            'investment_date': investment_date,
+            'cdi_percentage': cdi_percentage,
+            'total_current_value': initial_investment + investment_return,
+            'total_return': investment_return,
+            'return_percentage': (investment_return / initial_investment) * 100,
+            'created_at': datetime.now()
+        }
+        
+        # Insere no MongoDB
+        self.investments_collection.insert_one(investment)
+        
+        return investment
+    
+    def get_investments(self, year=None):
+        """
+        Recupera investimentos, opcionalmente filtrados por ano
+        """
+        query = {} if year is None else {'investment_date__year': year}
+        investments = list(self.investments_collection.find(query))
+        
+        df = pd.DataFrame(investments)
+        
+        # Remove o campo '_id' do MongoDB para processamento
+        if not df.empty:
+            df = df.drop(columns=['_id', 'created_at'])
+        
+        return df
+
+    # Método para atualizar a coleção de investimentos
+    def update_investment(self, investment_id, updates):
+        """
+        Atualiza um investimento existente
+        """
+        from bson.objectid import ObjectId
+        
+        # Remove o ID se estiver presente nos updates para evitar erro
+        updates.pop('_id', None)
+        
+        # Atualiza o investimento
+        result = self.investments_collection.update_one(
+            {'_id': ObjectId(investment_id)}, 
+            {'$set': updates}
+        )
+        return result.modified_count > 0
+    
+    def delete_investment(self, investment_id):
+        """
+        Deleta um investimento específico
+        """
+        from bson.objectid import ObjectId
+        
+        result = self.investments_collection.delete_one({'_id': ObjectId(investment_id)})
+        return result.deleted_count > 0
+
 
 class InvestmentTracker:
     def __init__(self):
@@ -343,9 +483,10 @@ class InvestmentTracker:
             'total_return': investment_return,
             'return_percentage': (investment_return / initial_investment) * 100
         }
+        
 def investment_tracking_interface(tracker):
     """
-    Streamlit interface for investment tracking
+    Interface Streamlit para rastreamento de investimentos
     """
     st.header("📈 Registro de Investimentos")
     
@@ -365,7 +506,7 @@ def investment_tracking_interface(tracker):
         if st.button("Rastrear Investimento em Ações"):
             result = tracker.track_stock_investment(ticker, quantity, purchase_price, purchase_date)
             if result:
-                st.write("### Detalhes do Investimento")
+                st.success("Investimento registrado com sucesso!")
                 st.json(result)
     
     else:  # Renda Fixa
@@ -385,7 +526,7 @@ def investment_tracking_interface(tracker):
                 investment_name, initial_investment, investment_date, cdi_percentage/100
             )
             if result:
-                st.write("### Detalhes do Investimento")
+                st.success("Investimento registrado com sucesso!")
                 st.json(result)
     
     
@@ -414,7 +555,8 @@ def main():
     tracker = FinancialTracker()
     
     # Menu de navegação
-    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", "Investimentos", "Gerenciar Transações"]
+    mmenu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
+            "Gerenciar Transações", "Registro de Investimentos", "Gerenciar Investimentos"]
     choice = st.sidebar.selectbox("Menu", menu)
     
     if choice == "Lançamentos":
@@ -531,10 +673,11 @@ def main():
         else:
             st.warning("Adicione algumas transações para receber dicas personalizadas.")
             
-    elif choice == "Investimentos":
-        st.subheader("📋 Gestão de investimentos")
+    elif choice == "Registro de Investimentos":
         investment_tracking_interface(tracker)
     
+    elif choice == "Gerenciar Investimentos":
+        manage_investments_interface(tracker)
 
     elif choice == "Gerenciar Transações":
         st.subheader("📋 Gerenciar Transações")
