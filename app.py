@@ -526,7 +526,7 @@ def investment_tracking_interface(tracker):
 
 def purchase_intelligence_interface(tracker):
     """
-    Interface Streamlit para inteligência de compra
+    Interface Streamlit para inteligência de compra com foco no orçamento mensal.
     """
     st.subheader("🛒 Inteligência de Compra")
 
@@ -540,32 +540,53 @@ def purchase_intelligence_interface(tracker):
         # Entrada do valor do item a ser comprado
         purchase_value = st.number_input("Valor do Item que Deseja Comprar (R$)", min_value=0.01, format="%.2f")
         
+        # Seleção do mês de referência
+        current_month = datetime.now().month
+        months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+        selected_month = st.selectbox("Mês de Referência", months, index=current_month - 1)
+        
         if st.button("Obter Recomendação de Compra"):
             if purchase_value > 0:
-                # Gera dicas contextuais
-                tips = advisor.generate_contextual_tips()
+                # Filtra transações para o mês selecionado
+                monthly_transactions = df_transactions[df_transactions['month'] == selected_month]
                 
-                # Cria contexto para a IA
-                context = " ".join(tips)
-                
-                # Gera recomendação personalizada
-                try:
-                    response = advisor.model.generate_content(
-                        f"Considerando esta análise financeira: {context}. "
-                        f"O usuário deseja comprar um item no valor de R$ {purchase_value:.2f}. "
-                        "Dê uma recomendação personalizada sobre a melhor forma de realizar essa compra, "
-                        "considerando o orçamento atual e as condições financeiras do usuário. "
-                        "A resposta deve ser curta e direta, em até 3 linhas."
+                if not monthly_transactions.empty:
+                    # Calcula a renda, despesas e investimentos do mês
+                    monthly_income = monthly_transactions[monthly_transactions['type'] == 'Receita']['value'].sum()
+                    monthly_expenses = monthly_transactions[monthly_transactions['type'] == 'Despesa']['value'].sum()
+                    monthly_investments = monthly_transactions[monthly_transactions['type'] == 'Investimento']['value'].sum()
+                    
+                    # Calcula o saldo disponível no mês
+                    available_balance = monthly_income - monthly_expenses - monthly_investments
+                    
+                    # Gera contexto para a IA
+                    context = (
+                        f"No mês de {selected_month}, sua renda foi de R$ {monthly_income:.2f}, "
+                        f"suas despesas foram de R$ {monthly_expenses:.2f}, "
+                        f"e seus investimentos foram de R$ {monthly_investments:.2f}. "
+                        f"Seu saldo disponível é de R$ {available_balance:.2f}. "
+                        f"Você deseja comprar um item no valor de R$ {purchase_value:.2f}."
                     )
-                    st.success(f"🤖 Recomendação do HeroAI: {response.text.strip()}")
-                except Exception as e:
-                    st.error(f"Erro ao gerar recomendação: {e}")
+                    
+                    # Gera recomendação personalizada
+                    try:
+                        response = advisor.model.generate_content(
+                            f"Considerando esta análise financeira mensal: {context}. "
+                            "Dê uma recomendação personalizada sobre a melhor forma de realizar essa compra, "
+                            "considerando o orçamento mensal e as condições financeiras do usuário. "
+                            "Sugira se é possível comprar agora, se deve parcelar, ou se deve adiar para um mês mais favorável. "
+                            "A resposta deve ser curta e direta, em até 3 linhas."
+                        )
+                        st.success(f"🤖 Recomendação do HeroAI: {response.text.strip()}")
+                    except Exception as e:
+                        st.error(f"Erro ao gerar recomendação: {e}")
+                else:
+                    st.warning(f"Nenhuma transação registrada para o mês de {selected_month}.")
             else:
                 st.warning("Por favor, insira um valor válido para o item que deseja comprar.")
     else:
         st.warning("Adicione algumas transações para receber recomendações personalizadas.")
-
-    
     
 
 def check_mongodb_connection():
