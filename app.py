@@ -523,6 +523,89 @@ def investment_tracking_interface(tracker):
             if result:
                 st.success("Investimento registrado com sucesso!")
                 st.json(result)
+
+def purchase_intelligence_interface(tracker):
+    """
+    Interface Streamlit para inteligência de compra
+    """
+    st.subheader("🛒 Inteligência de Compra")
+
+    # Recupera transações para análise
+    df_transactions = tracker.get_transactions()
+    
+    if not df_transactions.empty:
+        # Cria o conselheiro financeiro
+        advisor = FinancialAdvisor(df_transactions)
+        
+        # Entrada do valor do item a ser comprado
+        purchase_value = st.number_input("Valor do Item que Deseja Comprar (R$)", min_value=0.01, format="%.2f")
+        
+        if st.button("Obter Recomendação de Compra"):
+            if purchase_value > 0:
+                # Gera dicas contextuais
+                tips = advisor.generate_contextual_tips()
+                
+                # Cria contexto para a IA
+                context = " ".join(tips)
+                
+                # Gera recomendação personalizada
+                try:
+                    response = advisor.model.generate_content(
+                        f"Considerando esta análise financeira: {context}. "
+                        f"O usuário deseja comprar um item no valor de R$ {purchase_value:.2f}. "
+                        "Dê uma recomendação personalizada sobre a melhor forma de realizar essa compra, "
+                        "considerando o orçamento atual e as condições financeiras do usuário. "
+                        "A resposta deve ser curta e direta, em até 3 linhas."
+                    )
+                    st.success(f"🤖 Recomendação do HeroAI: {response.text.strip()}")
+                except Exception as e:
+                    st.error(f"Erro ao gerar recomendação: {e}")
+            else:
+                st.warning("Por favor, insira um valor válido para o item que deseja comprar.")
+    else:
+        st.warning("Adicione algumas transações para receber recomendações personalizadas.")
+
+# Adicionar a nova opção no menu
+def main():
+    """
+    Função principal do aplicativo Streamlit
+    """
+    st.title("🏦 Gestor Financeiro Inteligente")
+    
+    # Inicializa o rastreador financeiro
+    tracker = FinancialTracker()
+    
+    # Menu de navegação
+    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
+            "Gerenciar Transações", "Registro de Investimentos", "Gerenciar Investimentos", 
+            "Inteligência de Compra"]  # Adicionada a nova opção
+    choice = st.sidebar.selectbox("Menu", menu)
+
+    if choice == "Lançamentos":
+        # Código existente...
+        pass
+    elif choice == "Análise Financeira":
+        # Código existente...
+        pass
+    elif choice == "Dicas Financeiras":
+        # Código existente...
+        pass
+    elif choice == "Gerenciar Transações":
+        # Código existente...
+        pass
+    elif choice == "Registro de Investimentos":
+        # Código existente...
+        pass
+    elif choice == "Gerenciar Investimentos":
+        # Código existente...
+        pass
+    elif choice == "Inteligência de Compra":
+        purchase_intelligence_interface(tracker)  # Nova funcionalidade
+
+if __name__ == "__main__":
+    # Verifica conexão com MongoDB
+    if check_mongodb_connection():
+        main()
     
     
 
@@ -551,7 +634,7 @@ def main():
     
     # Menu de navegação
     menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
-            "Gerenciar Transações", "Registro de Investimentos", "Gerenciar Investimentos"]
+            "Gerenciar Transações", "Inteligência de Compra", "Registro de Investimentos", "Gerenciar Investimentos"]
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Lançamentos":
@@ -785,6 +868,10 @@ def main():
       else:
           st.warning("Nenhuma transação encontrada para o ano selecionado")
 
+    
+    elif choice == "Inteligência de Compra":
+        purchase_intelligence_interface(tracker)
+    
 if __name__ == "__main__":
     # Verifica conexão com MongoDB
     if check_mongodb_connection():
