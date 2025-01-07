@@ -678,14 +678,14 @@ def main():
         
         # Recupera transações
         df_transactions = tracker.get_transactions()
-        df_transactions 
+        
         
         if not df_transactions.empty:
             # Gera dicas contextuais
             advisor = FinancialAdvisor(df_transactions)
-            advisor
+            
             tips = advisor.generate_contextual_tips()
-            tips
+            
             
             for i, tip in enumerate(tips, 1):
                 st.write(f"{i}. {tip}")
