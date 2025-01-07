@@ -676,6 +676,7 @@ def main():
         if not df_transactions.empty:
             # Gera dicas contextuais
             advisor = FinancialAdvisor(df_transactions)
+            advisor
             tips = advisor.generate_contextual_tips()
             tips
             
