@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import google.generativeai as genai 
 import requests
 
+#e
 mongo_uri = st.secrets["mongo_uri"]
 
 class FinancialAdvisor:
