@@ -526,7 +526,7 @@ def investment_tracking_interface(tracker):
 
 def purchase_intelligence_interface(tracker):
     """
-    Interface Streamlit para inteligência de compra com recomendação automática de parcelamento.
+    Interface Streamlit para inteligência de compra com recomendações inteligentes para viabilizar a compra.
     """
     st.subheader("🛒 Inteligência de Compra")
 
@@ -560,55 +560,96 @@ def purchase_intelligence_interface(tracker):
                 # Calcula o saldo disponível no mês selecionado
                 available_balance = monthly_income - monthly_expenses - monthly_investments
                 
-                # Analisa os próximos meses para determinar o número ideal de parcelas
-                max_installments = 12  # Número máximo de parcelas a serem consideradas
-                feasible_installments = 0
-                installment_value = 0
-                
-                for i in range(1, max_installments + 1):
-                    # Calcula o valor de cada parcela
-                    installment_value = purchase_value / i
+                # Verifica se a compra cabe no mês selecionado
+                if purchase_value <= available_balance:
+                    context = (
+                        f"No mês de {selected_month}, seu saldo disponível é de R$ {available_balance:.2f}. "
+                        f"Você pode comprar o item à vista por R$ {purchase_value:.2f} sem comprometer seu orçamento."
+                    )
+                else:
+                    # Analisa os próximos meses para encontrar uma solução viável
+                    max_installments = 12  # Número máximo de parcelas a serem consideradas
+                    feasible_installments = 0
+                    installment_value = 0
+                    best_month = selected_month
+                    best_month_index = selected_month_index
                     
-                    # Verifica se o parcelamento é viável nos próximos meses
-                    is_feasible = True
-                    for j in range(i):
-                        future_month_index = (selected_month_index + j) % 12
-                        future_month = months[future_month_index]
-                        future_transactions = df_transactions[df_transactions['month'] == future_month]
+                    # Encontra o número ideal de parcelas
+                    for i in range(1, max_installments + 1):
+                        installment_value = purchase_value / i
+                        is_feasible = True
                         
-                        future_income = future_transactions[future_transactions['type'] == 'Receita']['value'].sum()
-                        future_expenses = future_transactions[future_transactions['type'] == 'Despesa']['value'].sum()
-                        future_investments = future_transactions[future_transactions['type'] == 'Investimento']['value'].sum()
+                        # Verifica se o parcelamento é viável nos próximos meses
+                        for j in range(i):
+                            future_month_index = (selected_month_index + j) % 12
+                            future_month = months[future_month_index]
+                            future_transactions = df_transactions[df_transactions['month'] == future_month]
+                            
+                            future_income = future_transactions[future_transactions['type'] == 'Receita']['value'].sum()
+                            future_expenses = future_transactions[future_transactions['type'] == 'Despesa']['value'].sum()
+                            future_investments = future_transactions[future_transactions['type'] == 'Investimento']['value'].sum()
+                            
+                            future_balance = future_income - future_expenses - future_investments
+                            
+                            if future_balance < installment_value:
+                                is_feasible = False
+                                break
                         
-                        future_balance = future_income - future_expenses - future_investments
-                        
-                        # Verifica se o saldo futuro é suficiente para cobrir a parcela
-                        if future_balance < installment_value:
-                            is_feasible = False
+                        if is_feasible:
+                            feasible_installments = i
+                            best_month = future_month
+                            best_month_index = future_month_index
+                        else:
                             break
                     
-                    if is_feasible:
-                        feasible_installments = i
+                    # Se o parcelamento for viável, sugere essa opção
+                    if feasible_installments > 0:
+                        context = (
+                            f"No mês de {selected_month}, seu saldo disponível é de R$ {available_balance:.2f}, "
+                            f"o que não é suficiente para comprar o item à vista. "
+                            f"Recomendamos parcelar em {feasible_installments}x de R$ {installment_value:.2f} "
+                            f"nos próximos meses, começando em {selected_month}."
+                        )
                     else:
-                        break
-                
-                # Gera contexto para a IA
-                context = (
-                    f"No mês de {selected_month}, sua renda foi de R$ {monthly_income:.2f}, "
-                    f"suas despesas foram de R$ {monthly_expenses:.2f}, "
-                    f"e seus investimentos foram de R$ {monthly_investments:.2f}. "
-                    f"Seu saldo disponível é de R$ {available_balance:.2f}. "
-                    f"Você deseja comprar um item no valor de R$ {purchase_value:.2f}. "
-                    f"Com base na análise dos próximos meses, o número máximo de parcelas viáveis é {feasible_installments}x de R$ {installment_value:.2f}."
-                )
+                        # Se o parcelamento não for viável, sugere adiar a compra
+                        # Encontra o mês com maior saldo disponível no futuro
+                        best_month_balance = 0
+                        for i in range(12):
+                            future_month_index = (selected_month_index + i) % 12
+                            future_month = months[future_month_index]
+                            future_transactions = df_transactions[df_transactions['month'] == future_month]
+                            
+                            future_income = future_transactions[future_transactions['type'] == 'Receita']['value'].sum()
+                            future_expenses = future_transactions[future_transactions['type'] == 'Despesa']['value'].sum()
+                            future_investments = future_transactions[future_transactions['type'] == 'Investimento']['value'].sum()
+                            
+                            future_balance = future_income - future_expenses - future_investments
+                            
+                            if future_balance > best_month_balance:
+                                best_month_balance = future_balance
+                                best_month = future_month
+                                best_month_index = future_month_index
+                        
+                        if best_month_balance >= purchase_value:
+                            context = (
+                                f"No mês de {selected_month}, seu saldo disponível é de R$ {available_balance:.2f}, "
+                                f"o que não é suficiente para comprar o item à vista. "
+                                f"Recomendamos adiar a compra para {best_month}, quando seu saldo disponível será de R$ {best_month_balance:.2f}."
+                            )
+                        else:
+                            context = (
+                                f"No mês de {selected_month}, seu saldo disponível é de R$ {available_balance:.2f}, "
+                                f"o que não é suficiente para comprar o item à vista. "
+                                f"Mesmo analisando os próximos meses, não há saldo suficiente para realizar a compra. "
+                                f"Recomendamos revisar seu orçamento ou considerar reduzir despesas/investimentos temporariamente."
+                            )
                 
                 # Gera recomendação personalizada
                 try:
                     response = advisor.model.generate_content(
-                        f"Considerando esta análise financeira mensal: {context}. "
+                        f"Considerando esta análise financeira: {context}. "
                         "Dê uma recomendação personalizada sobre a melhor forma de realizar essa compra, "
                         "considerando o orçamento mensal e as condições financeiras do usuário. "
-                        "Sugira se é possível comprar à vista, se deve parcelar sem juros, ou se deve adiar para um mês mais favorável. "
                         "A resposta deve ser curta e direta, em até 3 linhas."
                     )
                     st.success(f"🤖 Recomendação do HeroAI: {response.text.strip()}")
