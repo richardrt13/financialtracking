@@ -580,7 +580,7 @@ def main():
           elif type_transaction == 'Despesa': 
               category = st.selectbox("Categoria", 
                 ['Cartão', 'Internet', 'Tv a Cabo', 'Manutenção do carro', 'Combustível', 'Gás','Financiamento', 
-                 'Aluguel', 'Condomínio', 'Mercado'])
+                 'Aluguel', 'Condomínio', 'Mercado', 'Cursos', 'Anuidade'])
 
           elif type_transaction == 'Investimento': 
               category = st.selectbox("Categoria", 
