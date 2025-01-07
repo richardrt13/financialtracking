@@ -565,47 +565,6 @@ def purchase_intelligence_interface(tracker):
     else:
         st.warning("Adicione algumas transações para receber recomendações personalizadas.")
 
-# Adicionar a nova opção no menu
-def main():
-    """
-    Função principal do aplicativo Streamlit
-    """
-    st.title("🏦 Gestor Financeiro Inteligente")
-    
-    # Inicializa o rastreador financeiro
-    tracker = FinancialTracker()
-    
-    # Menu de navegação
-    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
-            "Gerenciar Transações", "Registro de Investimentos", "Gerenciar Investimentos", 
-            "Inteligência de Compra"]  # Adicionada a nova opção
-    choice = st.sidebar.selectbox("Menu", menu)
-
-    if choice == "Lançamentos":
-        # Código existente...
-        pass
-    elif choice == "Análise Financeira":
-        # Código existente...
-        pass
-    elif choice == "Dicas Financeiras":
-        # Código existente...
-        pass
-    elif choice == "Gerenciar Transações":
-        # Código existente...
-        pass
-    elif choice == "Registro de Investimentos":
-        # Código existente...
-        pass
-    elif choice == "Gerenciar Investimentos":
-        # Código existente...
-        pass
-    elif choice == "Inteligência de Compra":
-        purchase_intelligence_interface(tracker)  # Nova funcionalidade
-
-if __name__ == "__main__":
-    # Verifica conexão com MongoDB
-    if check_mongodb_connection():
-        main()
     
     
 
@@ -868,9 +827,8 @@ def main():
       else:
           st.warning("Nenhuma transação encontrada para o ano selecionado")
 
-    
-      elif choice == "Inteligência de Compra":
-          purchase_intelligence_interface(tracker)
+    elif choice == "Inteligência de Compra":
+        purchase_intelligence_interface(tracker)
     
 if __name__ == "__main__":
     # Verifica conexão com MongoDB
