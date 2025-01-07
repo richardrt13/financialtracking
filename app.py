@@ -524,9 +524,10 @@ def investment_tracking_interface(tracker):
                 st.success("Investimento registrado com sucesso!")
                 st.json(result)
 
+
 def purchase_intelligence_interface(tracker):
     """
-    Interface Streamlit para inteligência de compra com foco no orçamento mensal.
+    Interface Streamlit para inteligência de compra com foco no orçamento mensal e parcelamento sem juros.
     """
     st.subheader("🛒 Inteligência de Compra")
 
@@ -546,47 +547,73 @@ def purchase_intelligence_interface(tracker):
                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
         selected_month = st.selectbox("Mês de Referência", months, index=current_month - 1)
         
+        # Opção de parcelamento sem juros
+        interest_free_installments = st.number_input("Número de Parcelas Sem Juros (se disponível)", min_value=1, max_value=12, value=1)
+        
         if st.button("Obter Recomendação de Compra"):
             if purchase_value > 0:
-                # Filtra transações para o mês selecionado
+                # Filtra transações para o mês selecionado e os próximos meses
+                selected_month_index = months.index(selected_month)
                 monthly_transactions = df_transactions[df_transactions['month'] == selected_month]
                 
-                if not monthly_transactions.empty:
-                    # Calcula a renda, despesas e investimentos do mês
-                    monthly_income = monthly_transactions[monthly_transactions['type'] == 'Receita']['value'].sum()
-                    monthly_expenses = monthly_transactions[monthly_transactions['type'] == 'Despesa']['value'].sum()
-                    monthly_investments = monthly_transactions[monthly_transactions['type'] == 'Investimento']['value'].sum()
+                # Calcula a renda, despesas e investimentos do mês selecionado
+                monthly_income = monthly_transactions[monthly_transactions['type'] == 'Receita']['value'].sum()
+                monthly_expenses = monthly_transactions[monthly_transactions['type'] == 'Despesa']['value'].sum()
+                monthly_investments = monthly_transactions[monthly_transactions['type'] == 'Investimento']['value'].sum()
+                
+                # Calcula o saldo disponível no mês selecionado
+                available_balance = monthly_income - monthly_expenses - monthly_investments
+                
+                # Verifica se o parcelamento sem juros é uma opção viável
+                if interest_free_installments > 1:
+                    installment_value = purchase_value / interest_free_installments
+                    future_months_analysis = []
                     
-                    # Calcula o saldo disponível no mês
-                    available_balance = monthly_income - monthly_expenses - monthly_investments
+                    # Analisa os próximos meses para verificar se o parcelamento é viável
+                    for i in range(interest_free_installments):
+                        future_month_index = (selected_month_index + i) % 12
+                        future_month = months[future_month_index]
+                        future_transactions = df_transactions[df_transactions['month'] == future_month]
+                        
+                        future_income = future_transactions[future_transactions['type'] == 'Receita']['value'].sum()
+                        future_expenses = future_transactions[future_transactions['type'] == 'Despesa']['value'].sum()
+                        future_investments = future_transactions[future_transactions['type'] == 'Investimento']['value'].sum()
+                        
+                        future_balance = future_income - future_expenses - future_investments
+                        future_months_analysis.append((future_month, future_balance))
                     
-                    # Gera contexto para a IA
-                    context = (
-                        f"No mês de {selected_month}, sua renda foi de R$ {monthly_income:.2f}, "
-                        f"suas despesas foram de R$ {monthly_expenses:.2f}, "
-                        f"e seus investimentos foram de R$ {monthly_investments:.2f}. "
-                        f"Seu saldo disponível é de R$ {available_balance:.2f}. "
-                        f"Você deseja comprar um item no valor de R$ {purchase_value:.2f}."
-                    )
-                    
-                    # Gera recomendação personalizada
-                    try:
-                        response = advisor.model.generate_content(
-                            f"Considerando esta análise financeira mensal: {context}. "
-                            "Dê uma recomendação personalizada sobre a melhor forma de realizar essa compra, "
-                            "considerando o orçamento mensal e as condições financeiras do usuário. "
-                            "Sugira se é possível comprar agora, se deve parcelar, ou se deve adiar para um mês mais favorável. "
-                            "A resposta deve ser curta e direta, em até 3 linhas."
-                        )
-                        st.success(f"🤖 Recomendação do HeroAI: {response.text.strip()}")
-                    except Exception as e:
-                        st.error(f"Erro ao gerar recomendação: {e}")
+                    # Verifica se o parcelamento é viável nos próximos meses
+                    is_installment_feasible = all(balance >= installment_value for _, balance in future_months_analysis)
                 else:
-                    st.warning(f"Nenhuma transação registrada para o mês de {selected_month}.")
+                    is_installment_feasible = False
+                
+                # Gera contexto para a IA
+                context = (
+                    f"No mês de {selected_month}, sua renda foi de R$ {monthly_income:.2f}, "
+                    f"suas despesas foram de R$ {monthly_expenses:.2f}, "
+                    f"e seus investimentos foram de R$ {monthly_investments:.2f}. "
+                    f"Seu saldo disponível é de R$ {available_balance:.2f}. "
+                    f"Você deseja comprar um item no valor de R$ {purchase_value:.2f}. "
+                    f"Parcelamento sem juros em {interest_free_installments}x de R$ {purchase_value / interest_free_installments:.2f} é {'viável' if is_installment_feasible else 'inviável'}."
+                )
+                
+                # Gera recomendação personalizada
+                try:
+                    response = advisor.model.generate_content(
+                        f"Considerando esta análise financeira mensal: {context}. "
+                        "Dê uma recomendação personalizada sobre a melhor forma de realizar essa compra, "
+                        "considerando o orçamento mensal e as condições financeiras do usuário. "
+                        "Sugira se é possível comprar à vista, se deve parcelar sem juros, ou se deve adiar para um mês mais favorável. "
+                        "A resposta deve ser curta e direta, em até 3 linhas."
+                    )
+                    st.success(f"🤖 Recomendação do HeroAI: {response.text.strip()}")
+                except Exception as e:
+                    st.error(f"Erro ao gerar recomendação: {e}")
             else:
                 st.warning("Por favor, insira um valor válido para o item que deseja comprar.")
     else:
         st.warning("Adicione algumas transações para receber recomendações personalizadas.")
+
     
 
 def check_mongodb_connection():
