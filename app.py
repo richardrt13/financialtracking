@@ -64,6 +64,7 @@ class FinancialAdvisor:
     
     def generate_contextual_tips(self) -> list:
         metrics = self.analyze_financial_health()
+        metrics
         
         tips = []
         
@@ -72,7 +73,7 @@ class FinancialAdvisor:
             tips.append("🚨 Seu percentual de investimentos está muito baixo. Recomenda-se investir pelo menos 10-20% da renda.")
         elif metrics['investment_ratio'] > 30:
             tips.append("💡 Você está investindo muito! Verifique se não está comprometendo sua liquidez.")
-        
+        tips
         # Expense Management
         if metrics['expense_to_income_ratio'] > 70:
             tips.append("⚠️ Suas despesas consomem mais de 70% da sua renda. É crucial cortar gastos e aumentar a eficiência financeira.")
