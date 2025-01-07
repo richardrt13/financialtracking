@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import google.generativeai as genai 
 import requests
 
-mongo_uri = os.getenv('MONGO_URI')
+mongo_uri = st.secrets["mongo_uri"]
 
 class FinancialAdvisor:
     def __init__(self, transactions_df: pd.DataFrame):
