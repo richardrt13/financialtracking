@@ -38,6 +38,7 @@ class FinancialAdvisor:
         
         # Expanded monthly summary
         monthly_summary = self.transactions_df.groupby(['month', 'type'])['value'].sum().unstack(fill_value=0)
+        monthly_summary
         
         # Advanced metrics calculation
         metrics = {
@@ -60,24 +61,12 @@ class FinancialAdvisor:
         
         return metrics
         
-    def predict_monthly_debt(self, month: str) -> float:
-        """
-        Prevê dívidas para um mês específico
-        
-        Args:
-            month (str): Mês para previsão
-        
-        Returns:
-            float: Valor projetado de dívidas
-        """
-        month_data = self.transactions_df[self.transactions_df['month'] == month]
-        expenses = month_data[month_data['type'] == 'Despesa']['value'].sum()
-        return expenses
     
     def generate_contextual_tips(self) -> list:
         metrics = self.analyze_financial_health()
-        tips = []
         
+        tips = []
+        metrics
         # Investment Analysis
         if metrics['investment_ratio'] < 10:
             tips.append("🚨 Seu percentual de investimentos está muito baixo. Recomenda-se investir pelo menos 10-20% da renda.")
