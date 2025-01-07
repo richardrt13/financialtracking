@@ -677,6 +677,7 @@ def main():
             # Gera dicas contextuais
             advisor = FinancialAdvisor(df_transactions)
             tips = advisor.generate_contextual_tips()
+            tips
             
             for i, tip in enumerate(tips, 1):
                 st.write(f"{i}. {tip}")
