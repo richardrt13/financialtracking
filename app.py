@@ -38,7 +38,7 @@ class FinancialAdvisor:
         
         # Expanded monthly summary
         monthly_summary = self.transactions_df.groupby(['month', 'type'])['value'].sum().unstack(fill_value=0)
-        monthly_summary
+        
         
         # Advanced metrics calculation
         metrics = {
@@ -66,7 +66,7 @@ class FinancialAdvisor:
         metrics = self.analyze_financial_health()
         
         tips = []
-        metrics
+        
         # Investment Analysis
         if metrics['investment_ratio'] < 10:
             tips.append("🚨 Seu percentual de investimentos está muito baixo. Recomenda-se investir pelo menos 10-20% da renda.")
@@ -671,6 +671,7 @@ def main():
         
         # Recupera transações
         df_transactions = tracker.get_transactions()
+        df_transactions 
         
         if not df_transactions.empty:
             # Gera dicas contextuais
