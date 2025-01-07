@@ -524,10 +524,9 @@ def investment_tracking_interface(tracker):
                 st.success("Investimento registrado com sucesso!")
                 st.json(result)
 
-
 def purchase_intelligence_interface(tracker):
     """
-    Interface Streamlit para inteligência de compra com foco no orçamento mensal e parcelamento sem juros.
+    Interface Streamlit para inteligência de compra com recomendação automática de parcelamento.
     """
     st.subheader("🛒 Inteligência de Compra")
 
@@ -547,9 +546,6 @@ def purchase_intelligence_interface(tracker):
                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
         selected_month = st.selectbox("Mês de Referência", months, index=current_month - 1)
         
-        # Opção de parcelamento sem juros
-        interest_free_installments = st.number_input("Número de Parcelas Sem Juros (se disponível)", min_value=1, max_value=12, value=1)
-        
         if st.button("Obter Recomendação de Compra"):
             if purchase_value > 0:
                 # Filtra transações para o mês selecionado e os próximos meses
@@ -564,14 +560,19 @@ def purchase_intelligence_interface(tracker):
                 # Calcula o saldo disponível no mês selecionado
                 available_balance = monthly_income - monthly_expenses - monthly_investments
                 
-                # Verifica se o parcelamento sem juros é uma opção viável
-                if interest_free_installments > 1:
-                    installment_value = purchase_value / interest_free_installments
-                    future_months_analysis = []
+                # Analisa os próximos meses para determinar o número ideal de parcelas
+                max_installments = 12  # Número máximo de parcelas a serem consideradas
+                feasible_installments = 0
+                installment_value = 0
+                
+                for i in range(1, max_installments + 1):
+                    # Calcula o valor de cada parcela
+                    installment_value = purchase_value / i
                     
-                    # Analisa os próximos meses para verificar se o parcelamento é viável
-                    for i in range(interest_free_installments):
-                        future_month_index = (selected_month_index + i) % 12
+                    # Verifica se o parcelamento é viável nos próximos meses
+                    is_feasible = True
+                    for j in range(i):
+                        future_month_index = (selected_month_index + j) % 12
                         future_month = months[future_month_index]
                         future_transactions = df_transactions[df_transactions['month'] == future_month]
                         
@@ -580,12 +581,16 @@ def purchase_intelligence_interface(tracker):
                         future_investments = future_transactions[future_transactions['type'] == 'Investimento']['value'].sum()
                         
                         future_balance = future_income - future_expenses - future_investments
-                        future_months_analysis.append((future_month, future_balance))
+                        
+                        # Verifica se o saldo futuro é suficiente para cobrir a parcela
+                        if future_balance < installment_value:
+                            is_feasible = False
+                            break
                     
-                    # Verifica se o parcelamento é viável nos próximos meses
-                    is_installment_feasible = all(balance >= installment_value for _, balance in future_months_analysis)
-                else:
-                    is_installment_feasible = False
+                    if is_feasible:
+                        feasible_installments = i
+                    else:
+                        break
                 
                 # Gera contexto para a IA
                 context = (
@@ -594,7 +599,7 @@ def purchase_intelligence_interface(tracker):
                     f"e seus investimentos foram de R$ {monthly_investments:.2f}. "
                     f"Seu saldo disponível é de R$ {available_balance:.2f}. "
                     f"Você deseja comprar um item no valor de R$ {purchase_value:.2f}. "
-                    f"Parcelamento sem juros em {interest_free_installments}x de R$ {purchase_value / interest_free_installments:.2f} é {'viável' if is_installment_feasible else 'inviável'}."
+                    f"Com base na análise dos próximos meses, o número máximo de parcelas viáveis é {feasible_installments}x de R$ {installment_value:.2f}."
                 )
                 
                 # Gera recomendação personalizada
@@ -613,6 +618,7 @@ def purchase_intelligence_interface(tracker):
                 st.warning("Por favor, insira um valor válido para o item que deseja comprar.")
     else:
         st.warning("Adicione algumas transações para receber recomendações personalizadas.")
+
 
     
 
