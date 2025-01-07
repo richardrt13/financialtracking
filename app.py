@@ -64,55 +64,69 @@ class FinancialAdvisor:
     
     def generate_contextual_tips(self) -> list:
         metrics = self.analyze_financial_health()
-        metrics
-        
         tips = []
-        
-        # Investment Analysis
+    
+    # Investment Analysis (0-30%)
         if metrics['investment_ratio'] < 10:
             tips.append("🚨 Seu percentual de investimentos está muito baixo. Recomenda-se investir pelo menos 10-20% da renda.")
-        elif metrics['investment_ratio'] > 30:
+        elif 10 <= metrics['investment_ratio'] <= 20:
+            tips.append("✅ Ótimo! Você está investindo dentro da faixa recomendada (10-20%). Continue com o bom trabalho!")
+        elif 20 < metrics['investment_ratio'] <= 30:
+            tips.append("👍 Você está investindo acima da média! Apenas certifique-se de manter uma reserva de emergência.")
+        else:
             tips.append("💡 Você está investindo muito! Verifique se não está comprometendo sua liquidez.")
-        tips
-        # Expense Management
+
+        # Expense Management (0-100%)
         if metrics['expense_to_income_ratio'] > 70:
-            tips.append("⚠️ Suas despesas consomem mais de 70% da sua renda. É crucial cortar gastos e aumentar a eficiência financeira.")
-        elif metrics['expense_to_income_ratio'] > 50:
-            tips.append("🔍 Suas despesas estão próximas de 50% da renda. Faça uma revisão detalhada dos gastos.")
-        
-        # Revenue Stability
+            tips.append("⚠️ Suas despesas consomem mais de 70% da sua renda. É crucial cortar gastos.")
+        elif 50 < metrics['expense_to_income_ratio'] <= 70:
+            tips.append("🔍 Suas despesas estão entre 50-70% da renda. Busque reduzir gastos não essenciais.")
+        elif 30 <= metrics['expense_to_income_ratio'] <= 50:
+            tips.append("✅ Suas despesas estão em um bom patamar, entre 30-50% da renda.")
+        else:
+            tips.append("💫 Parabéns! Suas despesas estão muito bem controladas, abaixo de 30% da renda.")
+    
+    # Revenue Stability
         if metrics['revenue_volatility'] > 30:
-            tips.append("📊 Sua renda apresenta alta variabilidade. Considere fontes de renda mais estáveis ou criar um fundo de emergência.")
-        
-        # Savings and Emergency Fund
+            tips.append("📊 Sua renda apresenta alta variabilidade. Considere um fundo de emergência maior.")
+        elif 15 < metrics['revenue_volatility'] <= 30:
+            tips.append("📈 Sua renda tem variação moderada. Mantenha uma reserva de emergência adequada.")
+        else:
+            tips.append("💪 Sua renda é bastante estável. Continue mantendo uma reserva de segurança.")
+    
+    # Savings Analysis
         if metrics['net_cashflow'] < 0:
-            tips.append("🐖 Você está gastando mais do que ganha. Priorize a criação de um orçamento e corte de despesas não essenciais.")
+            tips.append("🐖 Atenção: você está gastando mais do que ganha. Revise seu orçamento.")
         else:
             savings_rate = metrics['net_cashflow'] / max(metrics['total_revenue'], 1) * 100
             if savings_rate < 10:
-                tips.append("💰 Sua taxa de poupança está baixa. Tente economizar pelo menos 10-20% da renda.")
-        
-        # Advanced AI-powered tips (if text generator available)
-        if st.button("Dica do HeroAI"):
-            if self.model and tips:
-                try:
-                    context = " ".join(tips)
-                    response = self.model.generate_content(f"Considerando esta análise financeira detalhada: {context}. Dê uma dica personalizada de gestão financeira em até 3 linhas.")
-                    ai_tip = response.text.strip()
-                    tips.append(f"🤖 HeroAI: {ai_tip}")
-                except Exception as e:
-                    st.warning(f"Geração de dica de IA avançada falhou: {e}")
-            
+                tips.append("💰 Sua taxa de poupança está abaixo de 10%. Tente aumentar suas economias.")
+            elif 10 <= savings_rate <= 20:
+                tips.append("🎯 Boa taxa de poupança, entre 10-20%! Continue economizando.")
+            else:
+                tips.append("🌟 Excelente! Sua taxa de poupança está acima de 20%.")
+    
+    # AI-powered tip (if available)
+        if st.button("Dica do HeroAI") and self.model and tips:
+            try:
+                context = " ".join(tips)
+                response = self.model.generate_content(
+                    f"Considerando esta análise financeira: {context}. "
+                    "Dê uma dica personalizada de gestão financeira em até 3 linhas."
+                )
+                tips.append(f"🤖 HeroAI: {response.text.strip()}")
+            except Exception:
+                pass
+    
         return tips[:5]
         
         # Backup tips
-        if not tips:
-            tips = [
-                "💡 Seu perfil financeiro parece estável. Continue monitorando e ajustando seu orçamento.",
-                "🏦 Considere diversificar suas fontes de renda e investimentos.",
-                "📈 Mantenha um registro detalhado e faça revisões periódicas."
-            ]
-        
+            if not tips:
+                tips = [
+                    "💡 Seu perfil financeiro parece estável. Continue monitorando e ajustando seu orçamento.",
+                    "🏦 Considere diversificar suas fontes de renda e investimentos.",
+                    "📈 Mantenha um registro detalhado e faça revisões periódicas."
+                ]
         return tips[:5]
 
 class FinancialTracker:
