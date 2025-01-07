@@ -869,8 +869,8 @@ def main():
           st.warning("Nenhuma transação encontrada para o ano selecionado")
 
     
-    elif choice == "Inteligência de Compra":
-        purchase_intelligence_interface(tracker)
+      elif choice == "Inteligência de Compra":
+          purchase_intelligence_interface(tracker)
     
 if __name__ == "__main__":
     # Verifica conexão com MongoDB
