@@ -120,14 +120,6 @@ class FinancialAdvisor:
     
         return tips[:5]
         
-        # Backup tips
-            if not tips:
-                tips = [
-                    "💡 Seu perfil financeiro parece estável. Continue monitorando e ajustando seu orçamento.",
-                    "🏦 Considere diversificar suas fontes de renda e investimentos.",
-                    "📈 Mantenha um registro detalhado e faça revisões periódicas."
-                ]
-        return tips[:5]
 
 class FinancialTracker:
     def __init__(self):
