@@ -527,143 +527,171 @@ def investment_tracking_interface(tracker):
 
 def purchase_intelligence_interface(tracker):
     """
-    Interface Streamlit para inteligência de compra com recomendações inteligentes para viabilizar a compra.
+    Interface aprimorada para consultoria financeira inteligente e planejamento de compras
     """
-    st.subheader("🛒 Inteligência de Compra")
-
+    st.subheader("🧠 Consultor Financeiro Inteligente")
+    
     # Recupera transações para análise
     df_transactions = tracker.get_transactions()
     
     if not df_transactions.empty:
         # Cria o conselheiro financeiro
         advisor = FinancialAdvisor(df_transactions)
+        metrics = advisor.analyze_financial_health()
         
-        # Entrada do valor do item a ser comprado
-        purchase_value = st.number_input("Valor do Item que Deseja Comprar (R$)", min_value=0.01, format="%.2f")
+        # Seção 1: Visão Geral Financeira
+        st.write("### 📊 Sua Situação Financeira Atual")
+        col1, col2, col3 = st.columns(3)
         
-        # Seleção do mês de referência
-        current_month = datetime.now().month
-        months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-        selected_month = st.selectbox("Mês de Referência", months, index=current_month - 1)
+        with col1:
+            st.metric(
+                "Saúde Financeira",
+                f"{100 - metrics['expense_to_income_ratio']:.1f}%",
+                help="Porcentagem da sua renda que não está comprometida com despesas"
+            )
+        with col2:
+            st.metric(
+                "Reserva Mensal",
+                f"R$ {metrics['net_cashflow']:.2f}",
+                help="Valor médio que sobra por mês após despesas"
+            )
+        with col3:
+            st.metric(
+                "Taxa de Investimento",
+                f"{metrics['investment_ratio']:.1f}%",
+                help="Porcentagem da sua renda destinada a investimentos"
+            )
         
-        if st.button("Obter Recomendação de Compra"):
-            if purchase_value > 0:
-                # Filtra transações para o mês selecionado e os próximos meses
-                selected_month_index = months.index(selected_month)
-                monthly_transactions = df_transactions[df_transactions['month'] == selected_month]
-                
-                # Calcula a renda, despesas e investimentos do mês selecionado
-                monthly_income = monthly_transactions[monthly_transactions['type'] == 'Receita']['value'].sum()
-                monthly_expenses = monthly_transactions[monthly_transactions['type'] == 'Despesa']['value'].sum()
-                monthly_investments = monthly_transactions[monthly_transactions['type'] == 'Investimento']['value'].sum()
-                
-                # Calcula o saldo disponível no mês selecionado
-                available_balance = monthly_income - monthly_expenses - monthly_investments
-                
-                # Verifica se a compra cabe no mês selecionado
-                if purchase_value <= available_balance:
-                    context = (
-                        f"No mês de {selected_month}, seu saldo disponível é de R$ {available_balance:.2f}. "
-                        f"Você pode comprar o item à vista por R$ {purchase_value:.2f} sem comprometer seu orçamento."
-                    )
-                else:
-                    # Analisa os próximos meses para encontrar uma solução viável
-                    max_installments = 12  # Número máximo de parcelas a serem consideradas
-                    feasible_installments = 0
-                    installment_value = 0
-                    best_month = selected_month
-                    best_month_index = selected_month_index
+        # Seção 2: Planejamento de Compra
+        st.write("### 🛍️ Planejamento de Compra")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            purchase_value = st.number_input("Valor do Item (R$)", min_value=0.01, format="%.2f")
+            purchase_priority = st.select_slider(
+                "Prioridade da Compra",
+                options=["Baixa", "Média", "Alta", "Essencial"],
+                value="Média"
+            )
+        
+        with col2:
+            purchase_type = st.selectbox(
+                "Tipo de Compra",
+                ["Única", "Recorrente"],
+                help="Compra única ou despesa recorrente mensal?"
+            )
+            if purchase_type == "Recorrente":
+                duration_months = st.number_input("Duração (meses)", min_value=1, max_value=60, value=12)
+        
+        # Seção 3: Análise de Viabilidade
+        if st.button("Analisar Viabilidade"):
+            st.write("### 📈 Análise de Viabilidade")
+            
+            # Calcula métricas importantes
+            monthly_savings = metrics['net_cashflow']
+            current_expenses_ratio = metrics['expense_to_income_ratio']
+            monthly_income = metrics['average_monthly_revenue']
+            
+            # Define limites com base na prioridade
+            priority_limits = {
+                "Baixa": 0.05,  # 5% da renda
+                "Média": 0.15,  # 15% da renda
+                "Alta": 0.25,   # 25% da renda
+                "Essencial": 0.35  # 35% da renda
+            }
+            
+            max_recommended = monthly_income * priority_limits[purchase_priority]
+            
+            # Analisa diferentes cenários
+            scenarios = []
+            
+            # Cenário 1: Compra à vista
+            if purchase_value <= monthly_savings:
+                scenarios.append({
+                    "tipo": "À Vista",
+                    "viabilidade": "Alta",
+                    "impacto": "Baixo",
+                    "descricao": f"Você pode fazer a compra à vista este mês, usando {(purchase_value/monthly_savings)*100:.1f}% da sua reserva mensal."
+                })
+            
+            # Cenário 2: Parcelamento
+            max_installment = monthly_savings * 0.3  # Máximo 30% da reserva mensal
+            recommended_installments = min(12, max(1, int(np.ceil(purchase_value / max_installment))))
+            
+            if recommended_installments <= 12:
+                installment_value = purchase_value / recommended_installments
+                scenarios.append({
+                    "tipo": "Parcelado",
+                    "viabilidade": "Média" if recommended_installments <= 6 else "Baixa",
+                    "impacto": "Médio",
+                    "descricao": f"Parcelamento em {recommended_installments}x de R$ {installment_value:.2f}, comprometendo {(installment_value/monthly_savings)*100:.1f}% da sua reserva mensal."
+                })
+            
+            # Cenário 3: Economia programada
+            months_to_save = int(np.ceil(purchase_value / (monthly_savings * 0.3)))
+            if months_to_save <= 12:
+                scenarios.append({
+                    "tipo": "Economia Programada",
+                    "viabilidade": "Alta",
+                    "impacto": "Baixo",
+                    "descricao": f"Economize R$ {purchase_value/months_to_save:.2f} por mês durante {months_to_save} meses para realizar a compra à vista."
+                })
+            
+            # Exibe recomendações
+            st.write("#### 💡 Cenários Recomendados")
+            
+            for scenario in scenarios:
+                with st.expander(f"{scenario['tipo']} - Viabilidade {scenario['viabilidade']}"):
+                    st.write(scenario['descricao'])
                     
-                    # Encontra o número ideal de parcelas
-                    for i in range(1, max_installments + 1):
-                        installment_value = purchase_value / i
-                        is_feasible = True
-                        
-                        # Verifica se o parcelamento é viável nos próximos meses
-                        for j in range(i):
-                            future_month_index = (selected_month_index + j) % 12
-                            future_month = months[future_month_index]
-                            future_transactions = df_transactions[df_transactions['month'] == future_month]
-                            
-                            future_income = future_transactions[future_transactions['type'] == 'Receita']['value'].sum()
-                            future_expenses = future_transactions[future_transactions['type'] == 'Despesa']['value'].sum()
-                            future_investments = future_transactions[future_transactions['type'] == 'Investimento']['value'].sum()
-                            
-                            future_balance = future_income - future_expenses - future_investments
-                            
-                            if future_balance < installment_value:
-                                is_feasible = False
-                                break
-                        
-                        if is_feasible:
-                            feasible_installments = i
-                            best_month = future_month
-                            best_month_index = future_month_index
-                        else:
-                            break
-                    
-                    # Se o parcelamento for viável, sugere essa opção
-                    if feasible_installments > 0:
-                        context = (
-                            f"No mês de {selected_month}, seu saldo disponível é de R$ {available_balance:.2f}, "
-                            f"o que não é suficiente para comprar o item à vista. "
-                            f"Recomendamos parcelar em {feasible_installments}x de R$ {installment_value:.2f} "
-                            f"nos próximos meses, começando em {selected_month}."
-                        )
-                    else:
-                        # Se o parcelamento não for viável, sugere adiar a compra
-                        # Encontra o mês com maior saldo disponível no futuro
-                        best_month_balance = 0
-                        for i in range(12):
-                            future_month_index = (selected_month_index + i) % 12
-                            future_month = months[future_month_index]
-                            future_transactions = df_transactions[df_transactions['month'] == future_month]
-                            
-                            future_income = future_transactions[future_transactions['type'] == 'Receita']['value'].sum()
-                            future_expenses = future_transactions[future_transactions['type'] == 'Despesa']['value'].sum()
-                            future_investments = future_transactions[future_transactions['type'] == 'Investimento']['value'].sum()
-                            
-                            future_balance = future_income - future_expenses - future_investments
-                            
-                            if future_balance > best_month_balance:
-                                best_month_balance = future_balance
-                                best_month = future_month
-                                best_month_index = future_month_index
-                        
-                        if best_month_balance >= purchase_value:
-                            context = (
-                                f"No mês de {selected_month}, seu saldo disponível é de R$ {available_balance:.2f}, "
-                                f"o que não é suficiente para comprar o item à vista. "
-                                f"Recomendamos adiar a compra para {best_month}, quando seu saldo disponível será de R$ {best_month_balance:.2f}."
-                            )
-                        else:
-                            context = (
-                                f"No mês de {selected_month}, seu saldo disponível é de R$ {available_balance:.2f}, "
-                                f"o que não é suficiente para comprar o item à vista. "
-                                f"Mesmo analisando os próximos meses, não há saldo suficiente para realizar a compra. "
-                                f"Recomendamos revisar seu orçamento ou considerar reduzir despesas/investimentos temporariamente."
-                            )
-                
-                # Gera recomendação personalizada
+                    if scenario['tipo'] == "Parcelado":
+                        # Adiciona simulação de juros
+                        st.write("##### Simulação com Juros")
+                        juros = st.slider("Taxa de Juros Mensal (%)", 0.0, 5.0, 2.0, 0.1)
+                        valor_final = purchase_value * (1 + juros/100) ** recommended_installments
+                        st.write(f"Valor final com juros: R$ {valor_final:.2f}")
+                        st.write(f"Custo dos juros: R$ {(valor_final - purchase_value):.2f}")
+            
+            # Alertas e Recomendações
+            st.write("#### ⚠️ Alertas e Considerações")
+            
+            alerts = []
+            if purchase_value > max_recommended:
+                alerts.append(f"O valor da compra representa {(purchase_value/monthly_income)*100:.1f}% da sua renda mensal, acima do recomendado ({priority_limits[purchase_priority]*100}%) para sua prioridade.")
+            
+            if current_expenses_ratio > 70:
+                alerts.append("Suas despesas já estão acima do recomendado (70% da renda). Considere adiar compras não essenciais.")
+            
+            if metrics['investment_ratio'] < 10:
+                alerts.append("Sua taxa de investimento está abaixo do recomendado (10%). Considere priorizar investimentos.")
+            
+            for alert in alerts:
+                st.warning(alert)
+            
+            # Solicita recomendação do modelo de IA
+            if advisor.model:
                 try:
-                    response = advisor.model.generate_content(
-                        f"Considerando esta análise financeira: {context}. "
-                        "Dê uma recomendação personalizada sobre a melhor forma de realizar essa compra, "
-                        "considerando o orçamento mensal e as condições financeiras do usuário. "
-                        "A resposta deve ser curta e direta, em até 3 linhas."
+                    context = (
+                        f"Valor da compra: R$ {purchase_value}, "
+                        f"Prioridade: {purchase_priority}, "
+                        f"Renda mensal: R$ {monthly_income:.2f}, "
+                        f"Comprometimento atual: {current_expenses_ratio:.1f}%, "
+                        f"Taxa de investimento: {metrics['investment_ratio']:.1f}%"
                     )
-                    st.success(f"🤖 Recomendação do HeroAI: {response.text.strip()}")
+                    
+                    response = advisor.model.generate_content(
+                        f"Analise esta situação financeira: {context}. "
+                        "Dê uma recomendação estratégica e personalizada sobre a melhor forma de proceder com esta compra, "
+                        "considerando o impacto no orçamento, prioridades financeiras e saúde financeira de longo prazo. "
+                        "A resposta deve ser objetiva e prática, em até 4 linhas."
+                    )
+                    st.info(f"🤖 Recomendação Estratégica: {response.text.strip()}")
                 except Exception as e:
                     st.error(f"Erro ao gerar recomendação: {e}")
-            else:
-                st.warning("Por favor, insira um valor válido para o item que deseja comprar.")
     else:
         st.warning("Adicione algumas transações para receber recomendações personalizadas.")
 
-
     
-
 def check_mongodb_connection():
     """
     Verifica a conexão com o MongoDB
