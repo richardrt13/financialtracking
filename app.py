@@ -539,28 +539,82 @@ def purchase_intelligence_interface(tracker):
         advisor = FinancialAdvisor(df_transactions)
         metrics = advisor.analyze_financial_health()
         
+        # Calcula métricas mensais corretas
+        monthly_summary = df_transactions.groupby(['month', 'type'])['value'].sum().unstack(fill_value=0)
+        
+        # Calcula médias mensais reais
+        monthly_revenue = monthly_summary.get('Receita', pd.Series([0])).mean()
+        monthly_expenses = monthly_summary.get('Despesa', pd.Series([0])).mean()
+        monthly_investments = monthly_summary.get('Investimento', pd.Series([0])).mean()
+        monthly_savings = monthly_revenue - monthly_expenses - monthly_investments
+        
+        # Obtém dados do mês atual
+        current_month = datetime.now().strftime('%B')  # Gets month name
+        months_pt = {
+            'January': 'Janeiro', 'February': 'Fevereiro', 'March': 'Março',
+            'April': 'Abril', 'May': 'Maio', 'June': 'Junho',
+            'July': 'Julho', 'August': 'Agosto', 'September': 'Setembro',
+            'October': 'Outubro', 'November': 'Novembro', 'December': 'Dezembro'
+        }
+        current_month_pt = months_pt[current_month]
+        
+        current_month_data = monthly_summary.loc[current_month_pt] if current_month_pt in monthly_summary.index else pd.Series({'Receita': 0, 'Despesa': 0, 'Investimento': 0})
+        
         # Seção 1: Visão Geral Financeira
-        st.write("### 📊 Sua Situação Financeira Atual")
+        st.write("### 📊 Sua Situação Financeira")
         col1, col2, col3 = st.columns(3)
         
         with col1:
+            expense_ratio = (monthly_expenses / monthly_revenue * 100) if monthly_revenue > 0 else 0
             st.metric(
                 "Saúde Financeira",
-                f"{100 - metrics['expense_to_income_ratio']:.1f}%",
-                help="Porcentagem da sua renda que não está comprometida com despesas"
+                f"{100 - expense_ratio:.1f}%",
+                help="Porcentagem da sua renda média mensal que não está comprometida com despesas"
             )
         with col2:
+            # Mostra tanto a reserva média quanto a atual
             st.metric(
-                "Reserva Mensal",
-                f"R$ {metrics['net_cashflow']:.2f}",
-                help="Valor médio que sobra por mês após despesas"
+                "Reserva Mensal Média",
+                f"R$ {monthly_savings:.2f}",
+                delta=f"R$ {(current_month_data.get('Receita', 0) - current_month_data.get('Despesa', 0) - current_month_data.get('Investimento', 0)) - monthly_savings:.2f} este mês",
+                help="Valor médio que sobra por mês após despesas e investimentos"
             )
         with col3:
+            investment_ratio = (monthly_investments / monthly_revenue * 100) if monthly_revenue > 0 else 0
             st.metric(
                 "Taxa de Investimento",
-                f"{metrics['investment_ratio']:.1f}%",
-                help="Porcentagem da sua renda destinada a investimentos"
+                f"{investment_ratio:.1f}%",
+                help="Porcentagem média da sua renda destinada a investimentos"
             )
+        
+        # Mostra tendência dos últimos meses
+        st.write("#### 📈 Tendência de Reserva Mensal")
+        last_months = min(6, len(monthly_summary))
+        if last_months > 0:
+            trend_data = monthly_summary.tail(last_months).copy()
+            trend_data['Reserva'] = trend_data['Receita'] - trend_data['Despesa'] - trend_data['Investimento']
+            
+            fig = go.Figure()
+            fig.add_trace(go.Line(
+                x=trend_data.index,
+                y=trend_data['Reserva'],
+                name='Reserva Mensal',
+                line=dict(color='#2E7D32')
+            ))
+            fig.add_hline(
+                y=monthly_savings,
+                line_dash="dash",
+                line_color="#666",
+                annotation_text="Média"
+            )
+            
+            fig.update_layout(
+                title="Evolução da Reserva Mensal",
+                xaxis_title="Mês",
+                yaxis_title="Valor (R$)",
+                height=300
+            )
+            st.plotly_chart(fig, use_container_width=True)
         
         # Seção 2: Planejamento de Compra
         st.write("### 🛍️ Planejamento de Compra")
@@ -587,11 +641,6 @@ def purchase_intelligence_interface(tracker):
         if st.button("Analisar Viabilidade"):
             st.write("### 📈 Análise de Viabilidade")
             
-            # Calcula métricas importantes
-            monthly_savings = metrics['net_cashflow']
-            current_expenses_ratio = metrics['expense_to_income_ratio']
-            monthly_income = metrics['average_monthly_revenue']
-            
             # Define limites com base na prioridade
             priority_limits = {
                 "Baixa": 0.05,  # 5% da renda
@@ -600,18 +649,29 @@ def purchase_intelligence_interface(tracker):
                 "Essencial": 0.35  # 35% da renda
             }
             
-            max_recommended = monthly_income * priority_limits[purchase_priority]
+            max_recommended = monthly_revenue * priority_limits[purchase_priority]
             
             # Analisa diferentes cenários
             scenarios = []
             
             # Cenário 1: Compra à vista
-            if purchase_value <= monthly_savings:
+            current_month_savings = (current_month_data.get('Receita', 0) - 
+                                   current_month_data.get('Despesa', 0) - 
+                                   current_month_data.get('Investimento', 0))
+            
+            if purchase_value <= current_month_savings:
                 scenarios.append({
                     "tipo": "À Vista",
                     "viabilidade": "Alta",
                     "impacto": "Baixo",
-                    "descricao": f"Você pode fazer a compra à vista este mês, usando {(purchase_value/monthly_savings)*100:.1f}% da sua reserva mensal."
+                    "descricao": f"Você pode fazer a compra à vista este mês, usando {(purchase_value/current_month_savings)*100:.1f}% da sua reserva atual."
+                })
+            elif purchase_value <= monthly_savings * 2:
+                scenarios.append({
+                    "tipo": "À Vista com Planejamento",
+                    "viabilidade": "Média",
+                    "impacto": "Médio",
+                    "descricao": f"Você pode fazer a compra à vista em 2 meses, economizando {purchase_value/2:.2f} por mês."
                 })
             
             # Cenário 2: Parcelamento
@@ -624,7 +684,7 @@ def purchase_intelligence_interface(tracker):
                     "tipo": "Parcelado",
                     "viabilidade": "Média" if recommended_installments <= 6 else "Baixa",
                     "impacto": "Médio",
-                    "descricao": f"Parcelamento em {recommended_installments}x de R$ {installment_value:.2f}, comprometendo {(installment_value/monthly_savings)*100:.1f}% da sua reserva mensal."
+                    "descricao": f"Parcelamento em {recommended_installments}x de R$ {installment_value:.2f}, comprometendo {(installment_value/monthly_savings)*100:.1f}% da sua reserva média mensal."
                 })
             
             # Cenário 3: Economia programada
@@ -649,21 +709,34 @@ def purchase_intelligence_interface(tracker):
                         st.write("##### Simulação com Juros")
                         juros = st.slider("Taxa de Juros Mensal (%)", 0.0, 5.0, 2.0, 0.1)
                         valor_final = purchase_value * (1 + juros/100) ** recommended_installments
-                        st.write(f"Valor final com juros: R$ {valor_final:.2f}")
-                        st.write(f"Custo dos juros: R$ {(valor_final - purchase_value):.2f}")
+                        parcela_com_juros = valor_final / recommended_installments
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("Valor Final", f"R$ {valor_final:.2f}")
+                            st.metric("Custo dos Juros", f"R$ {(valor_final - purchase_value):.2f}")
+                        with col2:
+                            st.metric("Parcela sem Juros", f"R$ {installment_value:.2f}")
+                            st.metric("Parcela com Juros", f"R$ {parcela_com_juros:.2f}")
             
             # Alertas e Recomendações
             st.write("#### ⚠️ Alertas e Considerações")
             
             alerts = []
             if purchase_value > max_recommended:
-                alerts.append(f"O valor da compra representa {(purchase_value/monthly_income)*100:.1f}% da sua renda mensal, acima do recomendado ({priority_limits[purchase_priority]*100}%) para sua prioridade.")
+                alerts.append(f"O valor da compra representa {(purchase_value/monthly_revenue)*100:.1f}% da sua renda mensal média, acima do recomendado ({priority_limits[purchase_priority]*100}%) para sua prioridade.")
             
-            if current_expenses_ratio > 70:
-                alerts.append("Suas despesas já estão acima do recomendado (70% da renda). Considere adiar compras não essenciais.")
+            if expense_ratio > 70:
+                alerts.append("Suas despesas médias já estão acima do recomendado (70% da renda). Considere adiar compras não essenciais.")
             
-            if metrics['investment_ratio'] < 10:
-                alerts.append("Sua taxa de investimento está abaixo do recomendado (10%). Considere priorizar investimentos.")
+            if investment_ratio < 10:
+                alerts.append("Sua taxa média de investimento está abaixo do recomendado (10%). Considere priorizar investimentos.")
+            
+            # Alerta sobre variação na reserva mensal
+            if last_months > 1:
+                reserva_std = trend_data['Reserva'].std()
+                if reserva_std > monthly_savings * 0.5:  # Se desvio padrão > 50% da média
+                    alerts.append("Sua reserva mensal tem variado significativamente. Considere criar um colchão financeiro para meses com menor reserva.")
             
             for alert in alerts:
                 st.warning(alert)
@@ -674,15 +747,17 @@ def purchase_intelligence_interface(tracker):
                     context = (
                         f"Valor da compra: R$ {purchase_value}, "
                         f"Prioridade: {purchase_priority}, "
-                        f"Renda mensal: R$ {monthly_income:.2f}, "
-                        f"Comprometimento atual: {current_expenses_ratio:.1f}%, "
-                        f"Taxa de investimento: {metrics['investment_ratio']:.1f}%"
+                        f"Renda mensal média: R$ {monthly_revenue:.2f}, "
+                        f"Reserva mensal média: R$ {monthly_savings:.2f}, "
+                        f"Reserva atual: R$ {current_month_savings:.2f}, "
+                        f"Comprometimento atual: {expense_ratio:.1f}%, "
+                        f"Taxa de investimento: {investment_ratio:.1f}%"
                     )
                     
                     response = advisor.model.generate_content(
                         f"Analise esta situação financeira: {context}. "
                         "Dê uma recomendação estratégica e personalizada sobre a melhor forma de proceder com esta compra, "
-                        "considerando o impacto no orçamento, prioridades financeiras e saúde financeira de longo prazo. "
+                        "considerando a diferença entre a reserva média e atual, o impacto no orçamento, prioridades financeiras e saúde financeira de longo prazo. "
                         "A resposta deve ser objetiva e prática, em até 4 linhas."
                     )
                     st.info(f"🤖 Recomendação Estratégica: {response.text.strip()}")
@@ -691,6 +766,7 @@ def purchase_intelligence_interface(tracker):
     else:
         st.warning("Adicione algumas transações para receber recomendações personalizadas.")
 
+                    
     
 def check_mongodb_connection():
     """
