@@ -532,7 +532,8 @@ def purchase_intelligence_interface(tracker):
     st.subheader("🧠 Consultor Financeiro Inteligente")
     
     # Recupera transações para análise
-    df_transactions = tracker.get_transactions()
+    current_year = datetime.now().year
+    df_transactions = tracker.get_transactions(current_year)
     
     if not df_transactions.empty:
         # Cria o conselheiro financeiro
