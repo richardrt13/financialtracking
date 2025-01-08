@@ -636,7 +636,7 @@ def purchase_intelligence_interface(tracker):
                     "tipo": "À Vista",
                     "viabilidade": "Alta",
                     "impacto": "Baixo",
-                    "descricao": f"Você pode fazer a compra à vista este mês, usando {(purchase_value/current_month_savings)*100:.1f}% da sua reserva atual."
+                    "descricao": f"Você pode fazer a compra à vista este mês, usando {(purchase_value/current_month_savings)*100:.1f}% da sua reserva atual de {current_month_savings/2:.2f}."
                 })
             elif purchase_value <= monthly_savings * 2:
                 scenarios.append({
@@ -704,14 +704,6 @@ def purchase_intelligence_interface(tracker):
             if investment_ratio < 10:
                 alerts.append("Sua taxa média de investimento está abaixo do recomendado (10%). Considere priorizar investimentos.")
             
-            # Alerta sobre variação na reserva mensal
-            if last_months > 1:
-                reserva_std = trend_data['Reserva'].std()
-                if reserva_std > monthly_savings * 0.5:  # Se desvio padrão > 50% da média
-                    alerts.append("Sua reserva mensal tem variado significativamente. Considere criar um colchão financeiro para meses com menor reserva.")
-            
-            for alert in alerts:
-                st.warning(alert)
             
             # Solicita recomendação do modelo de IA
             if advisor.model:
