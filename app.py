@@ -587,34 +587,6 @@ def purchase_intelligence_interface(tracker):
                 help="Porcentagem média da sua renda destinada a investimentos"
             )
         
-        # Mostra tendência dos últimos meses
-        st.write("#### 📈 Tendência de Reserva Mensal")
-        last_months = min(6, len(monthly_summary))
-        if last_months > 0:
-            trend_data = monthly_summary.tail(last_months).copy()
-            trend_data['Reserva'] = trend_data['Receita'] - trend_data['Despesa'] - trend_data['Investimento']
-            
-            fig = go.Figure()
-            fig.add_trace(go.Line(
-                x=trend_data.index,
-                y=trend_data['Reserva'],
-                name='Reserva Mensal',
-                line=dict(color='#2E7D32')
-            ))
-            fig.add_hline(
-                y=monthly_savings,
-                line_dash="dash",
-                line_color="#666",
-                annotation_text="Média"
-            )
-            
-            fig.update_layout(
-                title="Evolução da Reserva Mensal",
-                xaxis_title="Mês",
-                yaxis_title="Valor (R$)",
-                height=300
-            )
-            st.plotly_chart(fig, use_container_width=True)
         
         # Seção 2: Planejamento de Compra
         st.write("### 🛍️ Planejamento de Compra")
@@ -748,7 +720,7 @@ def purchase_intelligence_interface(tracker):
                         f"Valor da compra: R$ {purchase_value}, "
                         f"Prioridade: {purchase_priority}, "
                         f"Renda mensal média: R$ {monthly_revenue:.2f}, "
-                        f"Reserva mensal média: R$ {monthly_savings:.2f}, "
+                       # f"Reserva mensal média: R$ {monthly_savings:.2f}, "
                         f"Reserva atual: R$ {current_month_savings:.2f}, "
                         f"Comprometimento atual: {expense_ratio:.1f}%, "
                         f"Taxa de investimento: {investment_ratio:.1f}%"
