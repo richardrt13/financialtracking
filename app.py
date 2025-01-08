@@ -636,7 +636,7 @@ def purchase_intelligence_interface(tracker):
                     "tipo": "À Vista",
                     "viabilidade": "Alta",
                     "impacto": "Baixo",
-                    "descricao": f"Você pode fazer a compra à vista este mês, usando {(purchase_value/current_month_savings)*100:.1f}% da sua reserva atual de {current_month_savings/2:.2f}."
+                    "descricao": f"Você pode fazer a compra à vista este mês, usando {(purchase_value/current_month_savings)*100:.1f}% da sua reserva atual de {current_month_savings:.2f}."
                 })
             elif purchase_value <= monthly_savings * 2:
                 scenarios.append({
