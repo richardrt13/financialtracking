@@ -135,15 +135,6 @@ class FinancialTracker:
         self.db = self.client['financial_tracker']
         self.transactions_collection = self.db['transactions']
         self.investments_collection = self.db['investments']
-        
-        # Carregar ativos
-        self.stock_tickers = self.load_stock_tickers()
-        
-        # CDI rates (example values, should be updated with real data)
-        self.cdi_rates = {
-            '2023': 0.1375,  # 13.75%
-            '2024': 0.1150   # 11.50%
-        }
 
     
     def add_transaction(self, month, year, category, type, value):
