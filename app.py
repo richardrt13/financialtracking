@@ -480,51 +480,6 @@ class InvestmentTracker:
             'return_percentage': (investment_return / initial_investment) * 100
         }
         
-def investment_tracking_interface(tracker):
-    """
-    Interface Streamlit para rastreamento de investimentos
-    """
-    st.header("📈 Registro de Investimentos")
-    
-    investment_type = st.selectbox("Tipo de Investimento", 
-                                   ["Renda Variável", "Renda Fixa"])
-    
-    if investment_type == "Renda Variável":
-        col1, col2 = st.columns(2)
-        with col1:
-            ticker = st.selectbox("Ativo", tracker.stock_tickers)
-            quantity = st.number_input("Quantidade", min_value=1)
-            purchase_price = st.number_input("Preço de Compra", min_value=0.01, format="%.2f")
-        
-        with col2:
-            purchase_date = st.date_input("Data de Compra", datetime.now())
-        
-        if st.button("Rastrear Investimento em Ações"):
-            result = tracker.track_stock_investment(ticker, quantity, purchase_price, purchase_date)
-            if result:
-                st.success("Investimento registrado com sucesso!")
-                st.json(result)
-    
-    else:  # Renda Fixa
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            investment_name = st.selectbox("Tipo de Investimento", 
-                ["Tesouro Direto", "CDB", "LCI", "LCA", "CRI", "CRA"])
-            initial_investment = st.number_input("Valor Inicial", min_value=0.01, format="%.2f")
-            
-        with col2:
-            investment_date = st.date_input("Data do Investimento", datetime.now())
-            cdi_percentage = st.number_input("% do CDI", min_value=0.0, max_value=200.0, value=100.0, format="%.2f")
-        
-        if st.button("Rastrear Investimento de Renda Fixa"):
-            result = tracker.track_fixed_income_investment(
-                investment_name, initial_investment, investment_date, cdi_percentage/100
-            )
-            if result:
-                st.success("Investimento registrado com sucesso!")
-                st.json(result)
-
 def purchase_intelligence_interface(tracker):
     """
     Interface aprimorada para consultoria financeira inteligente e planejamento de compras
@@ -758,7 +713,7 @@ def main():
     
     # Menu de navegação
     menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
-            "Gerenciar Transações", "Inteligência de Compra", "Registro de Investimentos", "Gerenciar Investimentos"]
+            "Gerenciar Transações", "Inteligência de Compra"]
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Lançamentos":
@@ -898,12 +853,6 @@ def main():
                 st.write(f"{i}. {tip}")
         else:
             st.warning("Adicione algumas transações para receber dicas personalizadas.")
-            
-    elif choice == "Registro de Investimentos":
-        investment_tracking_interface(tracker)
-    
-    elif choice == "Gerenciar Investimentos":
-        manage_investments_interface(tracker)
 
     elif choice == "Gerenciar Transações":
       st.subheader("📋 Gerenciar Transações")
@@ -999,5 +948,3 @@ if __name__ == "__main__":
     # Verifica conexão com MongoDB
     if check_mongodb_connection():
         main()
-
-
