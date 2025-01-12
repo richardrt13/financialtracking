@@ -12,8 +12,8 @@ import google.generativeai as genai
 import requests
 from dotenv import load_dotenv
 
-#mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
-mongo_uri = os.environ.get('MONGO_URI')
+mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
+#mongo_uri = os.environ.get('MONGO_URI')
 mongo_uri
 
 class FinancialAdvisor:
