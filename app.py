@@ -12,9 +12,7 @@ import google.generativeai as genai
 import requests
 from dotenv import load_dotenv
 
-#mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
 mongo_uri = st.secrets["mongo_uri"]
-mongo_uri
 
 class FinancialAdvisor:
     def __init__(self, transactions_df: pd.DataFrame):
