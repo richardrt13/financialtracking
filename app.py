@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 import google.generativeai as genai 
 import requests
 
-mongo_uri = os.getenv('MONGO_URI')
+mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
+# mongo_uri = os.getenv('MONGO_URI')
 
 class FinancialAdvisor:
     def __init__(self, transactions_df: pd.DataFrame):
