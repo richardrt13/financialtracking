@@ -639,8 +639,8 @@ def main():
             
             # Adiciona ícones para status de pagamento
             def format_payment_status(row):
-                if row['type'] != 'Despesa':
-                    return "N/A"
+                #if row['type'] != 'Despesa':
+                    #return "N/A"
                 return "✅" if row['paid'] else "⏳"
             
             display_df['Status'] = display_df.apply(format_payment_status, axis=1)
