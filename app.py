@@ -627,7 +627,7 @@ def main():
                 
             with col3:
                 payment_ratio = (paid_expenses / total_despesa * 100) if total_despesa > 0 else 0
-                st.metric(label="Despesas Pagas",
+                st.metric(label="Compromissos Cumpridos",
                          value=f"{payment_ratio:.1f}%",
                          delta=f"{100-payment_ratio:.1f}% pendente")
             
@@ -656,8 +656,8 @@ def main():
             )
             
             # Adiciona opção para marcar pagamentos
-            if st.checkbox("Gerenciar Status de Pagamentos"):
-                st.subheader("Atualizar Status de Pagamentos")
+            if st.checkbox("Gerenciar Status de Compromissos"):
+                st.subheader("Atualizar Status de Compromissos")
                 
                 # Filtra apenas despesas não pagas
                 unpaid_expenses = df_transactions[
