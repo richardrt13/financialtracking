@@ -720,7 +720,7 @@ def main():
                       if success_count > 0:
                           st.success(f"{success_count} transações excluídas com sucesso!")
                         # Atualiza a página para refletir a exclusão
-                          st.experimental_rerun()
+                          st.rerun()
                   else:
                       st.warning("Nenhuma transação selecionada para exclusão.")
       else:
