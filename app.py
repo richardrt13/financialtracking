@@ -137,9 +137,10 @@ class FinancialTracker:
         self.investments_collection = self.db['investments']
 
     
+        
     def add_transaction(self, month, year, category, type, value):
         """
-        Adiciona uma nova transação ao MongoDB
+        Adiciona uma nova transação ao MongoDB com status de pagamento
         """
         transaction = {
             'month': month,
@@ -147,10 +148,28 @@ class FinancialTracker:
             'category': category,
             'type': type,
             'value': float(value),
-            'created_at': datetime.now()
+            'created_at': datetime.now(),
+            'paid': False,  # Novo campo para controle de pagamento
+            'payment_date': None  # Data em que foi pago
         }
         self.transactions_collection.insert_one(transaction)
-    
+
+    def update_payment_status(self, transaction_id, paid=True):
+        """
+        Atualiza o status de pagamento de uma transação
+        """
+        from bson.objectid import ObjectId
+        
+        updates = {
+            'paid': paid,
+            'payment_date': datetime.now() if paid else None
+        }
+        
+        self.transactions_collection.update_one(
+            {'_id': ObjectId(transaction_id)},
+            {'$set': updates}
+        )
+        
     def get_transactions(self, year=None):
         """
         Recupera transações, opcionalmente filtradas por ano
@@ -160,11 +179,17 @@ class FinancialTracker:
         
         df = pd.DataFrame(transactions)
         
-        # Remover o campo '_id' do MongoDB para processamento
         if not df.empty:
-            df = df.drop(columns=['_id', 'created_at'])
-        
+            # Remove o campo '_id' do MongoDB mas mantém como índice
+            df['_id'] = df['_id'].astype(str)
+            # Garante que o campo paid existe
+            if 'paid' not in df.columns:
+                df['paid'] = False
+            if 'payment_date' not in df.columns:
+                df['payment_date'] = None
+                
         return df
+    
     
     def financial_analysis(self, df):
         """
@@ -554,8 +579,7 @@ def main():
                   current_year += 1
         
           st.success(f"Transação adicionada com sucesso para {repeat_months} meses!")
-    
-    
+
     elif choice == "Análise Financeira":
         st.subheader("📊 Consolidado Financeiro")
         
@@ -583,42 +607,79 @@ def main():
             # Sumário de métricas
             st.subheader("Resumo Financeiro")
             
-            col1, col2 = st.columns(2)
+            # Métricas de pagamentos
+            col1, col2, col3 = st.columns(3)
             
             with col1:
                 total_receita = df_transactions[df_transactions['type'] == 'Receita']['value'].sum()
                 st.metric(label="Total Receitas", value=f"R$ {total_receita:.2f}")
-                total_despesa = df_transactions[df_transactions['type'] == 'Despesa']['value'].sum()
-                st.metric(label="Total Despesas",
-                          value=f"R$ {total_despesa:.2f}",
-                          delta_color="inverse",
-                          delta=f"{(total_despesa/max(total_receita, 1)*100):.2f}%")
-
+                
             with col2:
-                total_investimento = df_transactions[df_transactions['type'] == 'Investimento']['value'].sum()
-                st.metric(label="Total Investimentos", 
-                          value=f"R$ {total_investimento:.2f}",
-                          delta_color="inverse",
-                          delta=f"{(total_investimento/max(total_receita, 1)*100):.2f}%")
-                saldo_liquido = total_receita - total_despesa - total_investimento
-                st.metric(label="Saldo Líquido", 
-                          value=f"R$ {saldo_liquido:.2f}", 
-                          delta=f"{(saldo_liquido/max(total_receita, 1)*100):.2f}%")
+                total_despesa = df_transactions[df_transactions['type'] == 'Despesa']['value'].sum()
+                paid_expenses = df_transactions[(df_transactions['type'] == 'Despesa') & 
+                                             (df_transactions['paid'])]['value'].sum()
+                pending_expenses = total_despesa - paid_expenses
+                
+                st.metric(label="Total Despesas",
+                         value=f"R$ {total_despesa:.2f}",
+                         delta=f"R$ {pending_expenses:.2f} pendente",
+                         delta_color="inverse")
+                
+            with col3:
+                payment_ratio = (paid_expenses / total_despesa * 100) if total_despesa > 0 else 0
+                st.metric(label="Despesas Pagas",
+                         value=f"{payment_ratio:.1f}%",
+                         delta=f"{100-payment_ratio:.1f}% pendente")
             
-            # Opção para mostrar gráfico
-            if st.checkbox("Mostrar Gráfico Detalhado"):
-                analysis = tracker.financial_analysis(df_transactions)
-                fig = tracker.plot_financial_analysis(analysis)
-                st.plotly_chart(fig)
+            # Tabela detalhada com status de pagamento
+            st.subheader("Detalhamento de Transações")
             
-            # Detalhamento por categoria
-            st.subheader("Detalhamento por Categoria")
+            # Prepara dados para exibição
+            display_df = df_transactions[['month', 'category', 'type', 'value', 'paid']].copy()
             
-            categoria_summary = df_transactions.groupby(['type', 'category'])['value'].sum().reset_index()
-            st.dataframe(categoria_summary.style.format({'value': 'R$ {:.2f}'}))
+            # Adiciona ícones para status de pagamento
+            def format_payment_status(row):
+                if row['type'] != 'Despesa':
+                    return "N/A"
+                return "✅" if row['paid'] else "⏳"
             
-        else:
-            st.warning("Nenhuma transação registrada para o período selecionado")
+            display_df['Status'] = display_df.apply(format_payment_status, axis=1)
+            
+            # Remove coluna 'paid' da exibição
+            display_df = display_df.drop('paid', axis=1)
+            
+            # Exibe tabela com formatação condicional
+            st.dataframe(
+                display_df.style.format({'value': 'R$ {:.2f}'})
+                         .applymap(lambda x: 'color: green' if x == '✅' else 'color: orange',
+                                 subset=['Status'])
+            )
+            
+            # Adiciona opção para marcar pagamentos
+            if st.checkbox("Gerenciar Status de Pagamentos"):
+                st.subheader("Atualizar Status de Pagamentos")
+                
+                # Filtra apenas despesas não pagas
+                unpaid_expenses = df_transactions[
+                    (df_transactions['type'] == 'Despesa') & 
+                    (~df_transactions['paid'])
+                ][['_id', 'month', 'category', 'value', 'paid']]
+                
+                if not unpaid_expenses.empty:
+                    for _, row in unpaid_expenses.iterrows():
+                        col1, col2, col3 = st.columns([3, 1, 1])
+                        with col1:
+                            st.write(f"{row['month']} - {row['category']}")
+                        with col2:
+                            st.write(f"R$ {row['value']:.2f}")
+                        with col3:
+                            if st.button("✅ Marcar como Pago", key=row['_id']):
+                                tracker.update_payment_status(row['_id'])
+                                st.success("Status atualizado!")
+                                st.rerun()
+                else:
+                    st.info("Não há despesas pendentes no período selecionado! 🎉")
+    
     
     elif choice == "Dicas Financeiras":
         st.subheader("💡 Dicas de Otimização")
