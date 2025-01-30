@@ -656,31 +656,36 @@ def main():
                          .map(lambda x: 'color: green' if x == '✅' else 'color: orange',
                                  subset=['Status'])
             )
-            
-            # Adiciona opção para marcar pagamentos
             if st.checkbox("Gerenciar Status de Compromissos"):
                 st.subheader("Atualizar Status de Compromissos")
+    
+                unpaid_transactions = df_transactions[
+                    (df_transactions['paid'].fillna(False) == False)
+                ][['_id', 'month', 'category', 'type', 'value', 'paid']]
+    
+                if not unpaid_transactions.empty:
+                    for _, row in unpaid_transactions.iterrows():
+                       col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                       with col1:
+                           st.write(f"{row['month']} - {row['category']}")
+                       with col2:
+                           st.write(f"{row['type']}")  # Adicionado o tipo
+                       with col3:
+                           st.write(f"R$ {row['value']:.2f}")
+                       with col4:
+                           button_text = {
+                               'Receita': '✅ Marcar como Recebido',
+                               'Despesa': '✅ Marcar como Pago',
+                               'Investimento': '✅ Marcar como Realizado'
+                          }.get(row['type'], '✅ Marcar como Concluído')
                 
-                # Filtra apenas despesas não pagas
-                unpaid_expenses = df_transactions[
-                    #(df_transactions['type'] == 'Despesa') & 
-                    (df_transactions['paid'].fillna(False) == False) 
-                ][['_id', 'month', 'category', 'value', 'paid']]
-                
-                if not unpaid_expenses.empty:
-                    for _, row in unpaid_expenses.iterrows():
-                        col1, col2, col3 = st.columns([3, 1, 1])
-                        with col1:
-                            st.write(f"{row['month']} - {row['category']}")
-                        with col2:
-                            st.write(f"R$ {row['value']:.2f}")
-                        with col3:
-                            if st.button("✅ Marcar como Pago", key=row['_id']):
-                                tracker.update_payment_status(row['_id'])
-                                st.success("Status atualizado!")
-                                st.rerun()
-                else:
-                    st.info("Não há despesas pendentes no período selecionado! 🎉")
+                          if st.button(button_text, key=row['_id']):
+                             tracker.update_payment_status(row['_id'])
+                             st.success(f"{row['type']} marcado como concluído!")
+                             st.rerun()
+                 else:
+                     st.info("Não há movimentações pendentes no período selecionado! 🎉")
+            
     
     
     elif choice == "Dicas Financeiras":
