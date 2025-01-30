@@ -680,9 +680,9 @@ def main():
                           }.get(row['type'], '✅ Marcar como Concluído')
                 
                           if st.button(button_text, key=row['_id']):
-                             tracker.update_payment_status(row['_id'])
-                             st.success(f"{row['type']} marcado como concluído!")
-                             st.rerun()
+                              tracker.update_payment_status(row['_id'])
+                              st.success(f"{row['type']} marcado como concluído!")
+                              st.rerun()
                  else:
                      st.info("Não há movimentações pendentes no período selecionado! 🎉")
             
