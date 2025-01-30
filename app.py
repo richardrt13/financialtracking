@@ -649,45 +649,44 @@ def main():
             
             # Remove coluna 'paid' da exibição
             display_df = display_df.drop('paid', axis=1)
-            
-            # Exibe tabela com formatação condicional
+
             st.dataframe(
                 display_df.style.format({'value': 'R$ {:.2f}'})
-                         .map(lambda x: 'color: green' if x == '✅' else 'color: orange',
-                                 subset=['Status'])
+                .map(lambda x: 'color: green' if x == '✅' else 'color: orange', subset=['Status'])
             )
+            
             if st.checkbox("Gerenciar Status de Compromissos"):
                 st.subheader("Atualizar Status de Compromissos")
-    
+            
                 unpaid_transactions = df_transactions[
                     (df_transactions['paid'].fillna(False) == False)
                 ][['_id', 'month', 'category', 'type', 'value', 'paid']]
-    
+            
                 if not unpaid_transactions.empty:
                     for _, row in unpaid_transactions.iterrows():
-                       col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
-                       with col1:
-                           st.write(f"{row['month']} - {row['category']}")
-                       with col2:
-                           st.write(f"{row['type']}")  # Adicionado o tipo
-                       with col3:
-                           st.write(f"R$ {row['value']:.2f}")
-                       with col4:
-                           button_text = {
-                               'Receita': '✅ Marcar como Recebido',
-                               'Despesa': '✅ Marcar como Pago',
-                               'Investimento': '✅ Marcar como Realizado'
-                          }.get(row['type'], '✅ Marcar como Concluído')
-                
-                          if st.button(button_text, key=row['_id']):
-                              tracker.update_payment_status(row['_id'])
-                              st.success(f"{row['type']} marcado como concluído!")
-                              st.rerun()
-                 else:
-                     st.info("Não há movimentações pendentes no período selecionado! 🎉")
+                        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
             
-    
-    
+                        with col1:
+                            st.write(f"{row['month']} - {row['category']}")
+                        with col2:
+                            st.write(f"{row['type']}")  # Adicionado o tipo
+                        with col3:
+                            st.write(f"R$ {row['value']:.2f}")
+                        with col4:
+                            button_text = {
+                                'Receita': '✅ Marcar como Recebido',
+                                'Despesa': '✅ Marcar como Pago',
+                                'Investimento': '✅ Marcar como Realizado'
+                            }.get(row['type'], '✅ Marcar como Concluído')
+            
+                            if st.button(button_text, key=row['_id']):
+                                tracker.update_payment_status(row['_id'])
+                                st.success(f"{row['type']} marcado como concluído!")
+                                st.rerun()
+                else:
+                    st.info("Não há movimentações pendentes no período selecionado! 🎉")
+
+            
     elif choice == "Dicas Financeiras":
         st.subheader("💡 Dicas de Otimização")
         
