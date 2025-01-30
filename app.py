@@ -632,6 +632,16 @@ def main():
                 st.metric(label="Compromissos Cumpridos",
                          value=f"{payment_ratio:.1f}%",
                          delta=f"{100-payment_ratio:.1f}% pendente")
+
+            with col4:
+                saldo_livre = total_receita - total_despesa
+                delta_saldo = f"Positivo" if saldo_livre >= 0 else "Negativo"
+                delta_color = "normal" if saldo_livre >= 0 else "inverse"
+    
+                st.metric(label="Saldo Livre",
+                          value=f"R$ {saldo_livre:.2f}",
+                          delta=delta_saldo,
+                          delta_color=delta_color)
             
             # Tabela detalhada com status de pagamento
             st.subheader("Detalhamento de Transações")
