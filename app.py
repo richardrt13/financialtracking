@@ -121,7 +121,6 @@ class FinancialAdvisor:
     
         return tips[:5]
         
-
 class FinancialTracker:
     def __init__(self):
         """
@@ -134,12 +133,10 @@ class FinancialTracker:
         self.db = self.client['financial_tracker']
         self.transactions_collection = self.db['transactions']
         self.investments_collection = self.db['investments']
-
-    
         
-    def add_transaction(self, month, year, category, type, value):
+    def add_transaction(self, month, year, category, type, value, observation=''):
         """
-        Adiciona uma nova transação ao MongoDB com status de pagamento
+        Adiciona uma nova transação ao MongoDB com status de pagamento e observação
         """
         transaction = {
             'month': month,
@@ -147,11 +144,13 @@ class FinancialTracker:
             'category': category,
             'type': type,
             'value': float(value),
+            'observation': observation,
             'created_at': datetime.now(),
-            'paid': False,  # Novo campo para controle de pagamento
-            'payment_date': None  # Data em que foi pago
+            'paid': False,
+            'payment_date': None
         }
         self.transactions_collection.insert_one(transaction)
+
 
     def update_payment_status(self, transaction_id, paid=True):
         """
@@ -526,58 +525,62 @@ def main():
     choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Lançamentos":
-      st.subheader("📝 Registrar Transações")
-    
-      col1, col2 = st.columns(2)
-
-      with col2:
-          year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
-          type_transaction = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'])
-          repeat_months = st.number_input("Repetir por quantos meses?", min_value=1, max_value=36, value=1)
-    
-      with col1:
-          month = st.selectbox("Mês", 
-            ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
+        st.subheader("📝 Registrar Transações")
         
-          if type_transaction == 'Receita':
-              category = st.selectbox("Categoria", 
-                ['Salário', 'Outros'])
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
+            month = st.selectbox("Mês", 
+                ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
             
-          elif type_transaction == 'Despesa': 
-              category = st.selectbox("Categoria", 
-                ['Cartão', 'Internet', 'Tv a Cabo', 'Manutenção do carro', 'Combustível', 'Gás','Financiamento', 
-                 'Aluguel', 'Condomínio', 'Mercado', 'Cursos', 'Anuidade'])
-
-          elif type_transaction == 'Investimento': 
-              category = st.selectbox("Categoria", 
-                ['Renda Fixa', 'Renda Variável'])
-
-    
-      value = st.number_input("Valor", min_value=0.0, format="%.2f")
-    
-      if st.button("Adicionar Transação"):
-          current_month_index = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+            # Primeiro seleciona o tipo
+            type_transaction = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'])
+            
+            # Depois seleciona a categoria baseada no tipo
+            if type_transaction == 'Receita':
+                category = st.selectbox("Categoria", 
+                    ['Salário - 1ª Parcela', 'Salário - 2ª Parcela', '13º Salário', 'Férias', 'Outros'])
+            elif type_transaction == 'Despesa':
+                category = st.selectbox("Categoria", 
+                    ['Cartão', 'Internet', 'Tv a Cabo', 'Manutenção do carro', 'Combustível', 'Gás',
+                     'Financiamento', 'Aluguel', 'Condomínio', 'Mercado', 'Cursos', 'Anuidade'])
+            else:  # Investimento
+                category = st.selectbox("Categoria", 
+                    ['Renda Fixa', 'Renda Variável'])
+        
+        with col2:
+            value = st.number_input("Valor", min_value=0.0, format="%.2f")
+            repeat_months = st.number_input("Repetir por quantos meses?", min_value=1, max_value=36, value=1)
+            
+            # Campo para observações
+            observation = st.text_area("Observações", 
+                placeholder="Ex: Pagamento adiantado, Despesa extra, Bônus especial...")
+        
+        if st.button("Adicionar Transação"):
+            current_month_index = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].index(month)
-          current_year = year
-        
-          for i in range(repeat_months):
-              tracker.add_transaction(
-                  month=['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][current_month_index],
-                  year=current_year,
-                  category=category,
-                  type=type_transaction,
-                  value=value
-              )
+            current_year = year
             
-            # Avança para o próximo mês
-              current_month_index += 1
-              if current_month_index >= 12:
-                  current_month_index = 0
-                  current_year += 1
-        
-          st.success(f"Transação adicionada com sucesso para {repeat_months} meses!")
+            for i in range(repeat_months):
+                tracker.add_transaction(
+                    month=['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][current_month_index],
+                    year=current_year,
+                    category=category,
+                    type=type_transaction,
+                    value=value,
+                    observation=observation
+                )
+                
+                # Avança para o próximo mês
+                current_month_index += 1
+                if current_month_index >= 12:
+                    current_month_index = 0
+                    current_year += 1
+            
+            st.success(f"Transação adicionada com sucesso para {repeat_months} meses!")
 
     elif choice == "Análise Financeira":
         st.subheader("📊 Consolidado Financeiro")
