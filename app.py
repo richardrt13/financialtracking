@@ -653,7 +653,7 @@ def main():
             # Exibe tabela com formatação condicional
             st.dataframe(
                 display_df.style.format({'value': 'R$ {:.2f}'})
-                         .applymap(lambda x: 'color: green' if x == '✅' else 'color: orange',
+                         .map(lambda x: 'color: green' if x == '✅' else 'color: orange',
                                  subset=['Status'])
             )
             
@@ -663,7 +663,7 @@ def main():
                 
                 # Filtra apenas despesas não pagas
                 unpaid_expenses = df_transactions[
-                    (df_transactions['type'] == 'Despesa') & 
+                    #(df_transactions['type'] == 'Despesa') & 
                     (df_transactions['paid'].fillna(False) == False) 
                 ][['_id', 'month', 'category', 'value', 'paid']]
                 
