@@ -610,7 +610,7 @@ def main():
             st.subheader("Resumo Financeiro")
             
             # Métricas de pagamentos
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3, col4, col5 = st.columns(5)
             
             with col1:
                 total_receita = df_transactions[df_transactions['type'] == 'Receita']['value'].sum()
@@ -634,7 +634,18 @@ def main():
                          delta=f"{100-payment_ratio:.1f}% pendente")
 
             with col4:
-                saldo_livre = total_receita - total_despesa
+                total_investimento = df_transactions[df_transactions['type'] == 'Investimento']['value'].sum()
+                paid_investimento = df_transactions[(df_transactions['type'] == 'Investimento') & 
+                                             (df_transactions['paid'])]['value'].sum()
+                pending_investimento = total_investimento - paid_investimento
+                
+                st.metric(label="Total Despesas",
+                         value=f"R$ {total_investimento:.2f}",
+                         delta=f"R$ {pending_investimento:.2f} pendente",
+                         delta_color="inverse")
+
+            with col5:
+                saldo_livre = total_receita - total_despesa - total_investimento
                 delta_saldo = f"Positivo" if saldo_livre >= 0 else "Negativo"
                 delta_color = "normal" if saldo_livre >= 0 else "inverse"
     
