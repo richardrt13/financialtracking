@@ -639,7 +639,7 @@ def main():
                                              (df_transactions['paid'])]['value'].sum()
                 pending_investimento = total_investimento - paid_investimento
                 
-                st.metric(label="Total Despesas",
+                st.metric(label="Total Investimentos",
                          value=f"R$ {total_investimento:.2f}",
                          delta=f"R$ {pending_investimento:.2f} pendente",
                          delta_color="inverse")
