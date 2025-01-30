@@ -664,7 +664,7 @@ def main():
                 # Filtra apenas despesas não pagas
                 unpaid_expenses = df_transactions[
                     (df_transactions['type'] == 'Despesa') & 
-                    (~df_transactions['paid'])
+                    (df_transactions['paid'].fillna(False) == False) 
                 ][['_id', 'month', 'category', 'value', 'paid']]
                 
                 if not unpaid_expenses.empty:
