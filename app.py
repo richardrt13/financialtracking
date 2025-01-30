@@ -658,7 +658,7 @@ def main():
             st.subheader("Detalhamento de Transações")
             
             # Prepara dados para exibição
-            display_df = df_transactions[['month', 'category', 'type', 'value', 'paid']].copy()
+            display_df = df_transactions[['month', 'category', 'type', 'observation', 'value', 'paid']].copy()
             
             # Adiciona ícones para status de pagamento
             def format_payment_status(row):
