@@ -128,7 +128,6 @@ class FinancialTracker:
         Inicializa o rastreador financeiro com conexão ao MongoDB e carregamento de ativos
         """
         # Conexão com MongoDB
-        mongo_uri = "mongodb+srv://richardrt13:QtZ9CnSP6dv93hlh@stockidea.isx8swk.mongodb.net/?retryWrites=true&w=majority&appName=StockIdea"
         self.client = MongoClient(mongo_uri)
         
         # Nome do banco de dados e coleção
