@@ -594,8 +594,6 @@ def login_page():
     
     return False
 
-Correção da função main()
-
 def main():
     """
     Função principal do aplicativo Streamlit
