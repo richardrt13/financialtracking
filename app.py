@@ -527,7 +527,7 @@ def check_mongodb_connection():
     try:
         client = MongoClient(mongo_uri)
         client.admin.command('ismaster')
-        st.success("Conexão com MongoDB estabelecida com sucesso!")
+        #st.success("Conexão com MongoDB estabelecida com sucesso!")
         return True
     except Exception as e:
         st.error(f"Erro de conexão com MongoDB: {e}")
@@ -543,9 +543,9 @@ def login_page():
     
     # Check if already logged in
     if 'token' in st.session_state:
-        st.success("Você já está logado!")
-        if st.button("Sair"):
-            auth_manager.logout_user()
+        # st.success("Você já está logado!")
+        # if st.button("Sair"):
+        #     auth_manager.logout_user()
             st.rerun()
         return True
     
