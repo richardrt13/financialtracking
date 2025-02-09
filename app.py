@@ -736,7 +736,7 @@ def main():
                          delta=f"R$ {pending_expenses:.2f} pendente",
                          delta_color="inverse")
 
-            col3, col4, col5 = st.columns(2)
+            col3, col4 = st.columns(2)
                 
             with col3:
                 payment_ratio = (paid_expenses / total_despesa * 100) if total_despesa > 0 else 0
