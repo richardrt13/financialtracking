@@ -20,25 +20,25 @@ class AuthManager:
         # Ensure legacy user exists
         self._ensure_legacy_user()
         
-    def _ensure_legacy_user(self):
-        """Ensure legacy user exists in the database"""
-        legacy_user = self.users_collection.find_one({'email': 'admin@example.com'})
-        if not legacy_user:
-            # Create legacy user for existing data
-            legacy_user = {
-                'email': 'admin@example.com',
-                'password': self._hash_password('Admin@123'),  # Define uma senha padrão
-                'name': 'Admin',
-                'created_at': datetime.utcnow(),
-                'is_legacy': True
-            }
-            self.users_collection.insert_one(legacy_user)
+    # def _ensure_legacy_user(self):
+    #     """Ensure legacy user exists in the database"""
+    #     legacy_user = self.users_collection.find_one({'email': 'admin@example.com'})
+    #     if not legacy_user:
+    #         # Create legacy user for existing data
+    #         legacy_user = {
+    #             'email': 'admin@example.com',
+    #             'password': self._hash_password('Admin@123'),  # Define uma senha padrão
+    #             'name': 'Admin',
+    #             'created_at': datetime.utcnow(),
+    #             'is_legacy': True
+    #         }
+    #         self.users_collection.insert_one(legacy_user)
             
-            # Update all existing transactions to associate with legacy user
-            self.db.transactions.update_many(
-                {'user_id': {'$exists': False}},
-                {'$set': {'user_id': str(legacy_user['_id'])}}
-            )
+    #         # Update all existing transactions to associate with legacy user
+    #         self.db.transactions.update_many(
+    #             {'user_id': {'$exists': False}},
+    #             {'$set': {'user_id': str(legacy_user['_id'])}}
+    #         )
     
     def _hash_password(self, password: str) -> bytes:
         """Hash a password using bcrypt"""
