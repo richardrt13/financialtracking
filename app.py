@@ -627,14 +627,6 @@ def main():
             "Gerenciar Transações", "Inteligência de Compra"]
     choice = st.sidebar.selectbox("Menu", menu)
     st.title("🏦 Gestor Financeiro Inteligente")
-    
-    # Inicializa o rastreador financeiro
-    tracker = FinancialTracker()
-    
-    # Menu de navegação
-    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
-            "Gerenciar Transações", "Inteligência de Compra"]
-    choice = st.sidebar.selectbox("Menu", menu)
 
     if choice == "Lançamentos":
         st.subheader("📝 Registrar Transações")
