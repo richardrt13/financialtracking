@@ -617,8 +617,6 @@ def main():
         auth_manager.logout_user()
         st.rerun()
     
-    st.title("🏦 Gestor Financeiro Inteligente")
-    
     # Initialize the financial tracker with user context
     tracker = FinancialTracker(user_id=str(current_user['_id']))
     
