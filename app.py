@@ -543,10 +543,10 @@ def login_page():
     
     # Check if already logged in
     if 'token' in st.session_state:
-        # st.success("Você já está logado!")
-        # if st.button("Sair"):
-        #     auth_manager.logout_user()
-        st.rerun()
+        st.success("Você já está logado!")
+        if st.button("Sair"):
+            auth_manager.logout_user()
+            st.rerun()
         return True
     
     # Login/Register tabs
