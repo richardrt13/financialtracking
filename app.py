@@ -594,6 +594,8 @@ def login_page():
     
     return False
 
+Correção da função main()
+
 def main():
     """
     Função principal do aplicativo Streamlit
@@ -601,14 +603,20 @@ def main():
     # Initialize auth manager
     auth_manager = AuthManager(st.secrets["mongo_uri"])
     
-    # Handle authentication
-    if not login_page():
+    # Check if user is logged in
+    if 'token' not in st.session_state:
+        # Only show login page if not logged in
+        login_page()
         return
         
     # Get current user
     current_user = auth_manager.get_current_user()
     if not current_user:
         st.error("Erro de autenticação")
+        # Clear invalid token
+        if 'token' in st.session_state:
+            del st.session_state['token']
+        st.rerun()
         return
         
     # Display welcome message
@@ -624,6 +632,7 @@ def main():
     menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
             "Gerenciar Transações", "Inteligência de Compra"]
     choice = st.sidebar.selectbox("Menu", menu)
+    
     st.title("🏦 Gestor Financeiro Inteligente")
 
     if choice == "Lançamentos":
