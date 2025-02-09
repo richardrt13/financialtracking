@@ -719,7 +719,7 @@ def main():
             st.subheader("Resumo Financeiro")
             
             # Métricas de pagamentos
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             
             with col1:
                 total_receita = df_transactions[df_transactions['type'] == 'Receita']['value'].sum()
@@ -735,14 +735,14 @@ def main():
                          value=f"R$ {total_despesa:.2f}",
                          delta=f"R$ {pending_expenses:.2f} pendente",
                          delta_color="inverse")
-
-            col3, col4 = st.columns(2)
                 
             with col3:
                 payment_ratio = (paid_expenses / total_despesa * 100) if total_despesa > 0 else 0
                 st.metric(label="Compromissos Cumpridos",
                          value=f"{payment_ratio:.1f}%",
                          delta=f"{100-payment_ratio:.1f}% pendente")
+                
+            col4, col5 = st.columns(2)
 
             with col4:
                 total_investimento = df_transactions[df_transactions['type'] == 'Investimento']['value'].sum()
@@ -754,8 +754,6 @@ def main():
                          value=f"R$ {total_investimento:.2f}",
                          delta=f"R$ {pending_investimento:.2f} pendente",
                          delta_color="inverse")
-
-            col5 = st.columns(1)
 
             with col5:
                 saldo_livre = total_receita - total_despesa - total_investimento
