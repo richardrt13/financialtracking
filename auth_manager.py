@@ -18,7 +18,7 @@ class AuthManager:
         self.JWT_EXPIRY_DAYS = 7
         
         # Ensure legacy user exists
-        self._ensure_legacy_user()
+        #self._ensure_legacy_user()
         
     # def _ensure_legacy_user(self):
     #     """Ensure legacy user exists in the database"""
