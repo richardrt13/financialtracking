@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import google.generativeai as genai 
 import requests
 from dotenv import load_dotenv
+from auth_manager import AuthManager
 
 mongo_uri = st.secrets["mongo_uri"]
 
@@ -122,17 +123,19 @@ class FinancialAdvisor:
         return tips[:5]
         
 class FinancialTracker:
-    def __init__(self):
+    def __init__(self, user_id=None):
         """
         Inicializa o rastreador financeiro com conexão ao MongoDB e carregamento de ativos
+        
+        Args:
+            user_id: ID do usuário atual para filtrar transações
         """
         # Conexão com MongoDB
         self.client = MongoClient(mongo_uri)
-        
-        # Nome do banco de dados e coleção
         self.db = self.client['financial_tracker']
         self.transactions_collection = self.db['transactions']
         self.investments_collection = self.db['investments']
+        self.user_id = user_id
         
     def add_transaction(self, month, year, category, type, value, observation=''):
         """
@@ -147,9 +150,11 @@ class FinancialTracker:
             'observation': observation,
             'created_at': datetime.now(),
             'paid': False,
-            'payment_date': None
+            'payment_date': None,
+            'user_id': self.user_id  # Adiciona user_id à transação
         }
         self.transactions_collection.insert_one(transaction)
+
 
 
     def update_payment_status(self, transaction_id, paid=True):
@@ -158,13 +163,22 @@ class FinancialTracker:
         """
         from bson.objectid import ObjectId
         
+        # Adiciona verificação de propriedade
+        transaction = self.transactions_collection.find_one({
+            '_id': ObjectId(transaction_id),
+            'user_id': self.user_id
+        })
+        
+        if not transaction:
+            raise ValueError("Transação não encontrada ou não pertence ao usuário")
+            
         updates = {
             'paid': paid,
             'payment_date': datetime.now() if paid else None
         }
         
         self.transactions_collection.update_one(
-            {'_id': ObjectId(transaction_id)},
+            {'_id': ObjectId(transaction_id), 'user_id': self.user_id},
             {'$set': updates}
         )
         
@@ -172,15 +186,19 @@ class FinancialTracker:
         """
         Recupera transações, opcionalmente filtradas por ano
         """
-        query = {} if year is None else {'year': year}
+        # Base query com filtro de usuário
+        query = {'user_id': self.user_id}
+        
+        # Adiciona filtro de ano se especificado
+        if year is not None:
+            query['year'] = year
+            
         transactions = list(self.transactions_collection.find(query))
         
         df = pd.DataFrame(transactions)
         
         if not df.empty:
-            # Remove o campo '_id' do MongoDB mas mantém como índice
             df['_id'] = df['_id'].astype(str)
-            # Garante que o campo paid existe
             if 'paid' not in df.columns:
                 df['paid'] = False
             if 'payment_date' not in df.columns:
@@ -250,19 +268,24 @@ class FinancialTracker:
     def update_transaction(self, transaction_id, updates):
         """
         Atualiza uma transação existente
-        
-        Args:
-            transaction_id (str): ID da transação no MongoDB
-            updates (dict): Dicionário com campos a serem atualizados
         """
         from bson.objectid import ObjectId
         
-        # Remove o ID se estiver presente nos updates para evitar erro
-        updates.pop('_id', None)
+        # Verifica propriedade da transação
+        transaction = self.transactions_collection.find_one({
+            '_id': ObjectId(transaction_id),
+            'user_id': self.user_id
+        })
         
-        # Atualiza a transação
+        if not transaction:
+            raise ValueError("Transação não encontrada ou não pertence ao usuário")
+        
+        # Remove campos sensíveis dos updates
+        updates.pop('_id', None)
+        updates.pop('user_id', None)
+        
         result = self.transactions_collection.update_one(
-            {'_id': ObjectId(transaction_id)}, 
+            {'_id': ObjectId(transaction_id), 'user_id': self.user_id}, 
             {'$set': updates}
         )
         return result.modified_count > 0
@@ -270,13 +293,14 @@ class FinancialTracker:
     def delete_transaction(self, transaction_id):
         """
         Deleta uma transação específica
-        
-        Args:
-            transaction_id (str): ID da transação no MongoDB
         """
         from bson.objectid import ObjectId
         
-        result = self.transactions_collection.delete_one({'_id': ObjectId(transaction_id)})
+        # Verifica propriedade antes de deletar
+        result = self.transactions_collection.delete_one({
+            '_id': ObjectId(transaction_id),
+            'user_id': self.user_id
+        })
         return result.deleted_count > 0
 
     def get_transactions_ids(self, year=None):
@@ -510,10 +534,98 @@ def check_mongodb_connection():
         st.warning("Verifique sua connection string e configurações de rede.")
         return False
 
+def login_page():
+    """Render login page"""
+    st.title("🔐 Login")
+    
+    # Initialize auth manager
+    auth_manager = AuthManager(st.secrets["mongo_uri"])
+    
+    # Check if already logged in
+    if 'token' in st.session_state:
+        st.success("Você já está logado!")
+        if st.button("Sair"):
+            auth_manager.logout_user()
+            st.rerun()
+        return True
+    
+    # Login/Register tabs
+    tab1, tab2 = st.tabs(["Login", "Cadastro"])
+    
+    with tab1:
+        with st.form("login_form"):
+            email = st.text_input("Email")
+            password = st.text_input("Senha", type="password")
+            
+            # Adiciona mensagem sobre usuário legado
+            if email == "admin@example.com":
+                st.info("Use este login para acessar os dados existentes.")
+                
+            submitted = st.form_submit_button("Entrar")
+            
+            if submitted:
+                success, result = auth_manager.login_user(email, password)
+                if success:
+                    st.session_state['token'] = result
+                    st.success("Login realizado com sucesso!")
+                    st.rerun()
+                else:
+                    st.error(result)
+    
+    with tab2:
+        with st.form("register_form"):
+            name = st.text_input("Nome")
+            email = st.text_input("Email")
+            password = st.text_input("Senha", type="password")
+            password_confirm = st.text_input("Confirme a senha", type="password")
+            submitted = st.form_submit_button("Cadastrar")
+            
+            if submitted:
+                if password != password_confirm:
+                    st.error("As senhas não conferem!")
+                elif not name:
+                    st.error("Nome é obrigatório!")
+                else:
+                    success, result = auth_manager.register_user(email, password, name)
+                    if success:
+                        st.success("Cadastro realizado com sucesso! Faça login para continuar.")
+                    else:
+                        st.error(result)
+    
+    return False
+
 def main():
     """
     Função principal do aplicativo Streamlit
     """
+    # Initialize auth manager
+    auth_manager = AuthManager(st.secrets["mongo_uri"])
+    
+    # Handle authentication
+    if not login_page():
+        return
+        
+    # Get current user
+    current_user = auth_manager.get_current_user()
+    if not current_user:
+        st.error("Erro de autenticação")
+        return
+        
+    # Display welcome message
+    st.sidebar.write(f"👤 Olá, {current_user['name']}!")
+    if st.sidebar.button("Sair"):
+        auth_manager.logout_user()
+        st.rerun()
+    
+    st.title("🏦 Gestor Financeiro Inteligente")
+    
+    # Initialize the financial tracker with user context
+    tracker = FinancialTracker(user_id=str(current_user['_id']))
+    
+    # Menu de navegação
+    menu = ["Lançamentos", "Análise Financeira", "Dicas Financeiras", 
+            "Gerenciar Transações", "Inteligência de Compra"]
+    choice = st.sidebar.selectbox("Menu", menu)
     st.title("🏦 Gestor Financeiro Inteligente")
     
     # Inicializa o rastreador financeiro
