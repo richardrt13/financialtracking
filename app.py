@@ -613,7 +613,7 @@ def main():
         
     # Display welcome message
     st.sidebar.write(f"👤 Olá, {current_user['name']}!")
-    if st.sidebar.button("Sair"):
+    if st.sidebar.button("Logout"):
         auth_manager.logout_user()
         st.rerun()
     
