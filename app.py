@@ -558,7 +558,7 @@ def login_page():
             email = st.text_input("Email")
             password = st.text_input("Senha", type="password")
             remember_me = st.checkbox("Lembrar-me neste dispositivo", 
-                                    help="Mantenha-me conectado por 30 dias")
+                                    help="Ninguém merece fazer login toda hora, né?!")
             
             # Adiciona mensagem sobre usuário legado
             if email == "admin@example.com":
