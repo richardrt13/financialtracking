@@ -12,7 +12,7 @@ import google.generativeai as genai
 import requests
 from dotenv import load_dotenv
 from auth_manager import AuthManager
-from select import custom_select
+from custom_select import custom_select
 
 mongo_uri = st.secrets["mongo_uri"]
 
