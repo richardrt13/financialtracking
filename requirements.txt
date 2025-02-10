@@ -7,3 +7,4 @@ google-generativeai
 yfinance
 bcrypt
 pyjwt
+extra-streamlit-components
