@@ -23,9 +23,4 @@ def custom_select(label, options, key=None):
     
     # Renderiza o componente HTML
     components.html(select_html, height=70)
-    
-# Exemplo de uso
-meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
-custom_select("Mês", meses)
