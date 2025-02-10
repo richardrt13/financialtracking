@@ -641,9 +641,14 @@ def main():
         
         with col1:
             year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
-            month = st.selectbox("Mês", 
+            # month = st.selectbox("Mês", 
+            #     ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+            #      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
+
+            month = st.radio("Mês", 
                 ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
+                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+                horizontal=True)
             
             # Primeiro seleciona o tipo
             type_transaction = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'])
