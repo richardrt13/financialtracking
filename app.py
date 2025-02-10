@@ -542,8 +542,9 @@ def login_page():
     auth_manager = AuthManager(st.secrets["mongo_uri"])
     
     # Check if already logged in
-    if 'token' in st.session_state:
-        st.success("Você já está logado!")
+    current_user = auth_manager.get_current_user()
+    if current_user:
+        st.success(f"Você já está logado como {current_user['name']}!")
         if st.button("Sair"):
             auth_manager.logout_user()
             st.rerun()
@@ -556,6 +557,8 @@ def login_page():
         with st.form("login_form"):
             email = st.text_input("Email")
             password = st.text_input("Senha", type="password")
+            remember_me = st.checkbox("Lembrar-me neste dispositivo", 
+                                    help="Mantenha-me conectado por 30 dias")
             
             # Adiciona mensagem sobre usuário legado
             if email == "admin@example.com":
@@ -564,7 +567,7 @@ def login_page():
             submitted = st.form_submit_button("Entrar")
             
             if submitted:
-                success, result = auth_manager.login_user(email, password)
+                success, result = auth_manager.login_user(email, password, remember_me)
                 if success:
                     st.session_state['token'] = result
                     st.success("Login realizado com sucesso!")
@@ -591,8 +594,6 @@ def login_page():
                         st.success("Cadastro realizado com sucesso! Faça login para continuar.")
                     else:
                         st.error(result)
-    
-    return False
 
 def main():
     """
