@@ -642,13 +642,9 @@ def main():
         
         with col1:
             year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
-            # month = st.selectbox("Mês", 
-            #     ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-            #      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-            #     disabled=True)
-            meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-            custom_select("Mês", meses)
+            month = st.selectbox("Mês", 
+                ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
 
             
             # Primeiro seleciona o tipo
