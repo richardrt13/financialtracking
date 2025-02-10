@@ -12,6 +12,7 @@ import google.generativeai as genai
 import requests
 from dotenv import load_dotenv
 from auth_manager import AuthManager
+from select import custom_select
 
 mongo_uri = st.secrets["mongo_uri"]
 
@@ -641,10 +642,14 @@ def main():
         
         with col1:
             year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
-            month = st.selectbox("Mês", 
-                ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-                disabled=True)
+            # month = st.selectbox("Mês", 
+            #     ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+            #      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+            #     disabled=True)
+            meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+            custom_select("Mês", meses)
+
             
             # Primeiro seleciona o tipo
             type_transaction = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'])
