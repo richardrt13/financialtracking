@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import jwt
 import re
 from bson.objectid import ObjectId
+import extra_streamlit_components as stx
 
 class AuthManager:
     def __init__(self, mongo_uri):
@@ -15,7 +16,81 @@ class AuthManager:
         self.db = self.client['financial_tracker']
         self.users_collection = self.db['users']
         self.JWT_SECRET = st.secrets["jwt_secret"]
-        self.JWT_EXPIRY_DAYS = 7
+        self.JWT_EXPIRY_DAYS = 30  # Aumentado para 30 dias
+        self.cookie_manager = stx.CookieManager()
+        
+    def _generate_token(self, user_id: str, remember_me: bool = False) -> str:
+        """Generate a JWT token for the user"""
+        expiry = datetime.utcnow() + timedelta(days=self.JWT_EXPIRY_DAYS if remember_me else 1)
+        return jwt.encode(
+            {
+                'user_id': str(user_id), 
+                'exp': expiry,
+                'remember_me': remember_me
+            },
+            self.JWT_SECRET,
+            algorithm='HS256'
+        )
+    
+    def login_user(self, email: str, password: str, remember_me: bool = False) -> tuple[bool, str]:
+        """
+        Login a user
+        Returns: (success, token or error message)
+        """
+        user = self.users_collection.find_one({'email': email})
+        if not user:
+            return False, "Email ou senha incorretos"
+            
+        if not self._verify_password(password, user['password']):
+            return False, "Email ou senha incorretos"
+            
+        token = self._generate_token(user['_id'], remember_me)
+        
+        # Set cookie if remember_me is True
+        if remember_me:
+            self.cookie_manager.set(
+                'auth_token',
+                token,
+                expires_at=datetime.now() + timedelta(days=self.JWT_EXPIRY_DAYS),
+                key='auth_cookie'
+            )
+        
+        st.session_state['token'] = token
+        return True, token
+    
+    def get_current_user(self) -> dict:
+        """Get the current logged in user from session state or cookie"""
+        # First check session state
+        token = st.session_state.get('token')
+        
+        # If no token in session state, check cookies
+        if not token:
+            token = self.cookie_manager.get(key='auth_token')
+            if token:
+                # Validate token from cookie
+                payload = self._verify_token(token)
+                if payload and payload.get('remember_me'):
+                    # Token is valid and was created with remember_me
+                    st.session_state['token'] = token
+                else:
+                    # Invalid or expired token, clear cookie
+                    self.cookie_manager.delete('auth_token', key='auth_cookie')
+                    return None
+        
+        # Verify token and get user
+        payload = self._verify_token(token)
+        if not payload:
+            return None
+            
+        user = self.users_collection.find_one({'_id': ObjectId(payload['user_id'])})
+        return user
+    
+    def logout_user(self):
+        """Logout the current user"""
+        if 'token' in st.session_state:
+            del st.session_state['token']
+        # Clear auth cookie
+        self.cookie_manager.delete('auth_token', key='auth_cookie')
         
         # Ensure legacy user exists
         #self._ensure_legacy_user()
@@ -47,15 +122,6 @@ class AuthManager:
     def _verify_password(self, password: str, hashed: bytes) -> bool:
         """Verify a password against its hash"""
         return bcrypt.checkpw(password.encode('utf-8'), hashed)
-    
-    def _generate_token(self, user_id: str) -> str:
-        """Generate a JWT token for the user"""
-        expiry = datetime.utcnow() + timedelta(days=self.JWT_EXPIRY_DAYS)
-        return jwt.encode(
-            {'user_id': str(user_id), 'exp': expiry},
-            self.JWT_SECRET,
-            algorithm='HS256'
-        )
     
     def _verify_token(self, token: str) -> dict:
         """Verify a JWT token and return the payload"""
@@ -127,21 +193,4 @@ class AuthManager:
             
         token = self._generate_token(user['_id'])
         return True, token
-    
-    def get_current_user(self) -> dict:
-        """Get the current logged in user from session state"""
-        token = st.session_state.get('token')
-        if not token:
-            return None
-            
-        payload = self._verify_token(token)
-        if not payload:
-            return None
-            
-        user = self.users_collection.find_one({'_id': ObjectId(payload['user_id'])})
-        return user
-    
-    def logout_user(self):
-        """Logout the current user"""
-        if 'token' in st.session_state:
-            del st.session_state['token']
+
