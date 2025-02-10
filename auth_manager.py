@@ -16,7 +16,7 @@ class AuthManager:
         self.db = self.client['financial_tracker']
         self.users_collection = self.db['users']
         self.JWT_SECRET = st.secrets["jwt_secret"]
-        self.JWT_EXPIRY_DAYS = 30  # Aumentado para 30 dias
+        self.JWT_EXPIRY_DAYS = 360
         self.cookie_manager = stx.CookieManager()
         
     def _generate_token(self, user_id: str, remember_me: bool = False) -> str:
