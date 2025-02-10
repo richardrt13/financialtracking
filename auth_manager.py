@@ -16,9 +16,14 @@ class AuthManager:
         self.db = self.client['financial_tracker']
         self.users_collection = self.db['users']
         self.JWT_SECRET = st.secrets["jwt_secret"]
-        self.JWT_EXPIRY_DAYS = 360
-        self.cookie_manager = stx.CookieManager()
+        self.JWT_EXPIRY_DAYS = 30  # Aumentado para 30 dias
         
+    def _get_cookie_manager(self):
+        """Get or create cookie manager with unique key"""
+        if 'cookie_manager' not in st.session_state:
+            st.session_state.cookie_manager = stx.CookieManager(key='unique_cookie_manager')
+        return st.session_state.cookie_manager
+    
     def _generate_token(self, user_id: str, remember_me: bool = False) -> str:
         """Generate a JWT token for the user"""
         expiry = datetime.utcnow() + timedelta(days=self.JWT_EXPIRY_DAYS if remember_me else 1)
@@ -48,11 +53,11 @@ class AuthManager:
         
         # Set cookie if remember_me is True
         if remember_me:
-            self.cookie_manager.set(
+            cookie_manager = self._get_cookie_manager()
+            cookie_manager.set(
                 'auth_token',
                 token,
-                expires_at=datetime.now() + timedelta(days=self.JWT_EXPIRY_DAYS),
-                key='auth_cookie'
+                expires_at=datetime.now() + timedelta(days=self.JWT_EXPIRY_DAYS)
             )
         
         st.session_state['token'] = token
@@ -65,7 +70,8 @@ class AuthManager:
         
         # If no token in session state, check cookies
         if not token:
-            token = self.cookie_manager.get(key='auth_token')
+            cookie_manager = self._get_cookie_manager()
+            token = cookie_manager.get('auth_token')
             if token:
                 # Validate token from cookie
                 payload = self._verify_token(token)
@@ -74,7 +80,7 @@ class AuthManager:
                     st.session_state['token'] = token
                 else:
                     # Invalid or expired token, clear cookie
-                    self.cookie_manager.delete('auth_token', key='auth_cookie')
+                    cookie_manager.delete('auth_token')
                     return None
         
         # Verify token and get user
@@ -90,7 +96,8 @@ class AuthManager:
         if 'token' in st.session_state:
             del st.session_state['token']
         # Clear auth cookie
-        self.cookie_manager.delete('auth_token', key='auth_cookie')
+        cookie_manager = self._get_cookie_manager()
+        cookie_manager.delete('auth_token')
         
         # Ensure legacy user exists
         #self._ensure_legacy_user()
@@ -178,19 +185,5 @@ class AuthManager:
         
         result = self.users_collection.insert_one(user)
         return True, str(result.inserted_id)
-    
-    def login_user(self, email: str, password: str) -> tuple[bool, str]:
-        """
-        Login a user
-        Returns: (success, token or error message)
-        """
-        user = self.users_collection.find_one({'email': email})
-        if not user:
-            return False, "Email ou senha incorretos"
-            
-        if not self._verify_password(password, user['password']):
-            return False, "Email ou senha incorretos"
-            
-        token = self._generate_token(user['_id'])
-        return True, token
+
 
