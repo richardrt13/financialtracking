@@ -768,8 +768,31 @@ def main():
             # Tabela de transações editável
             st.subheader("Gerenciamento de Transações")
             
-            # Prepara dados para exibição e edição
+            col1, col2 = st.columns(2)
+
+            with col1:
+                current_year = datetime.now().year 
+                options = [current_year, current_year + 1] + list(range(current_year - 1, 2019, -1)) 
+                selected_year = st.selectbox("Ano", options)
+            
+            with col2:
+                selected_month = st.selectbox("Mês", 
+                    ['Todos'] + 
+                    ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
+            
+            # Recupera todas as transações primeiro
+            all_transactions = tracker.get_transactions(selected_year)
+            
+            # Cria uma cópia para trabalhar com os filtros
+            df_transactions = all_transactions.copy()
+            
+            # Aplica filtro de mês se necessário
+            if selected_month != 'Todos':
+                df_transactions = df_transactions[df_transactions['month'] == selected_month]
+            
             if not df_transactions.empty:
+                # Prepara dados para exibição e edição
                 display_df = df_transactions.copy()
                 display_df['_id'] = display_df['_id'].astype(str)
                 
@@ -828,12 +851,12 @@ def main():
                 
                 with col1:
                     if st.button("💾 Salvar Alterações"):
-                        # Cria um dicionário mapeando _id para a linha original
-                        original_rows = {str(row['_id']): row for _, row in df_transactions.iterrows()}
+                        # Mapeia todas as transações originais por ID
+                        original_transactions = {str(row['_id']): row for _, row in all_transactions.iterrows()}
                         
                         for _, edited_row in edited_df.iterrows():
                             transaction_id = edited_row['_id']
-                            original_row = original_rows.get(transaction_id)
+                            original_row = original_transactions.get(transaction_id)
                             
                             if original_row is not None:
                                 updates = {}
@@ -847,7 +870,7 @@ def main():
                                     try:
                                         tracker.update_transaction(transaction_id, updates)
                                     except Exception as e:
-                                        st.error(f"Erro ao atualizar transação: {e}")
+                                        st.error(f"Erro ao atualizar transação {transaction_id}: {e}")
                         
                         st.success("Alterações salvas com sucesso!")
                         st.rerun()
@@ -858,14 +881,17 @@ def main():
                         to_delete = edited_df[edited_df['delete']]['_id'].tolist()
                         
                         if to_delete:
+                            deleted_count = 0
                             for transaction_id in to_delete:
                                 try:
-                                    tracker.delete_transaction(transaction_id)
+                                    if tracker.delete_transaction(transaction_id):
+                                        deleted_count += 1
                                 except Exception as e:
-                                    st.error(f"Erro ao excluir transação: {e}")
+                                    st.error(f"Erro ao excluir transação {transaction_id}: {e}")
                             
-                            st.success("Transações excluídas com sucesso!")
-                            st.rerun()
+                            if deleted_count > 0:
+                                st.success(f"{deleted_count} transações excluídas com sucesso!")
+                                st.rerun()
                         else:
                             st.warning("Nenhuma transação selecionada para exclusão")
 
