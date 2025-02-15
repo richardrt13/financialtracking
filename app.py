@@ -793,140 +793,104 @@ def main():
                             current_year += 1
                     
                     st.success(f"Transação adicionada com sucesso para {repeat_months} meses!")
-                    st.rerun()
 
-            # Tabela de transações editável
-            # Dentro da função main(), substitua o bloco de código que lida com a edição de transações por:
+                    st.rerun()
 
             # Tabela de transações editável
             st.subheader("Gerenciamento de Transações")
             
-            col1, col2 = st.columns(2)
+            # Prepara dados para exibição e edição
+            display_df = df_transactions.copy()
+            display_df['_id'] = display_df['_id'].astype(str)
+            
+            # Remove campos que não queremos exibir
+            columns_to_display = ['month', 'type', 'category', 'value', 'observation', 'paid']
+            display_df = display_df[columns_to_display]
+            
+            # Adiciona coluna para exclusão
+            display_df['delete'] = False
+            
+            # Configuração das colunas
+            column_config = {
+                "month": st.column_config.SelectboxColumn(
+                    "Mês",
+                    options=['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+                ),
+                "type": st.column_config.SelectboxColumn(
+                    "Tipo",
+                    options=['Receita', 'Despesa', 'Investimento']
+                ),
+                "category": st.column_config.SelectboxColumn(
+                    "Categoria",
+                    options=['Salário - 1ª Parcela', 'Salário - 2ª Parcela', '13º Salário', 'Férias', 
+                            'Cartão', 'Internet', 'Tv a Cabo', 'Manutenção do carro', 'Combustível', 
+                            'Gás', 'Financiamento', 'Aluguel', 'Condomínio', 'Mercado', 'Cursos', 
+                            'Anuidade', 'Renda Fixa', 'Renda Variável', 'Outros']
+                ),
+                "value": st.column_config.NumberColumn(
+                    "Valor",
+                    format="R$ %.2f",
+                    min_value=0
+                ),
+                "observation": st.column_config.TextColumn("Observação"),
+                "paid": st.column_config.CheckboxColumn("Concluído"),
+                "delete": st.column_config.CheckboxColumn("Excluir")
+            }
 
+            # Renderiza editor de dados
+            edited_df = st.data_editor(
+                display_df,
+                column_config=column_config,
+                hide_index=True,
+                num_rows="dynamic",
+                use_container_width=True,
+                key="transaction_editor"
+            )
+
+            # Botões de ação
+            col1, col2 = st.columns(2)
+            
             with col1:
-                current_year = datetime.now().year 
-                options = [current_year, current_year + 1] + list(range(current_year - 1, 2019, -1)) 
-                selected_year = st.selectbox("Ano", options)
+                if st.button("💾 Salvar Alterações"):
+                    for index, row in edited_df.iterrows():
+                        original_row = df_transactions.iloc[index]
+                        updates = {}
+                        
+                        # Verifica alterações em cada campo
+                        for col in ['month', 'category', 'type', 'value', 'paid', 'observation']:
+                            if row[col] != original_row[col]:
+                                updates[col] = row[col]
+                        
+                        # Atualiza se houver mudanças
+                        if updates:
+                            try:
+                                tracker.update_transaction(original_row['_id'], updates)
+                            except Exception as e:
+                                st.error(f"Erro ao atualizar transação: {e}")
+                    
+                    st.success("Alterações salvas com sucesso!")
+                    st.rerun()
             
             with col2:
-                selected_month = st.selectbox("Mês", 
-                    ['Todos'] + 
-                    ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
-            
-            # Recupera todas as transações primeiro
-            all_transactions = tracker.get_transactions(selected_year)
-            
-            # Cria uma cópia para trabalhar com os filtros
-            df_transactions = all_transactions.copy()
-            
-            # Aplica filtro de mês se necessário
-            if selected_month != 'Todos':
-                df_transactions = df_transactions[df_transactions['month'] == selected_month]
-            
-            if not df_transactions.empty:
-                # Prepara dados para exibição e edição
-                display_df = df_transactions.copy()
-                display_df['_id'] = display_df['_id'].astype(str)
-                
-                # Remove campos que não queremos exibir
-                columns_to_display = ['_id', 'month', 'type', 'category', 'value', 'observation', 'paid']
-                display_df = display_df[columns_to_display]
-                
-                # Adiciona coluna para exclusão
-                display_df['delete'] = False
-                
-                # Configuração das colunas
-                column_config = {
-                    "_id": st.column_config.TextColumn(
-                        "ID",
-                        disabled=True,
-                        visible=False
-                    ),
-                    "month": st.column_config.SelectboxColumn(
-                        "Mês",
-                        options=['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-                    ),
-                    "type": st.column_config.SelectboxColumn(
-                        "Tipo",
-                        options=['Receita', 'Despesa', 'Investimento']
-                    ),
-                    "category": st.column_config.SelectboxColumn(
-                        "Categoria",
-                        options=['Salário - 1ª Parcela', 'Salário - 2ª Parcela', '13º Salário', 'Férias', 
-                                'Cartão', 'Internet', 'Tv a Cabo', 'Manutenção do carro', 'Combustível', 
-                                'Gás', 'Financiamento', 'Aluguel', 'Condomínio', 'Mercado', 'Cursos', 
-                                'Anuidade', 'Renda Fixa', 'Renda Variável', 'Outros']
-                    ),
-                    "value": st.column_config.NumberColumn(
-                        "Valor",
-                        format="R$ %.2f",
-                        min_value=0
-                    ),
-                    "observation": st.column_config.TextColumn("Observação"),
-                    "paid": st.column_config.CheckboxColumn("Concluído"),
-                    "delete": st.column_config.CheckboxColumn("Excluir")
-                }
-            
-                # Renderiza editor de dados
-                edited_df = st.data_editor(
-                    display_df,
-                    column_config=column_config,
-                    hide_index=True,
-                    num_rows="dynamic",
-                    use_container_width=True,
-                    key="transaction_editor"
-                )
-            
-                # Botões de ação
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    if st.button("💾 Salvar Alterações"):
-                        # Mapeia todas as transações originais por ID
-                        original_transactions = {str(row['_id']): row for _, row in all_transactions.iterrows()}
+                if st.button("🗑️ Excluir Selecionados"):
+                    # Filtra transações marcadas para exclusão
+                    to_delete = df_transactions[edited_df['delete']]['_id'].tolist()
+                    
+                    if to_delete:
+                        for transaction_id in to_delete:
+                            try:
+                                tracker.delete_transaction(transaction_id)
+                            except Exception as e:
+                                st.error(f"Erro ao excluir transação: {e}")
                         
-                        for _, edited_row in edited_df.iterrows():
-                            transaction_id = edited_row['_id']
-                            original_row = original_transactions.get(transaction_id)
-                            
-                            if original_row is not None:
-                                updates = {}
-                                # Verifica alterações em cada campo
-                                for col in ['month', 'category', 'type', 'value', 'paid', 'observation']:
-                                    if edited_row[col] != original_row[col]:
-                                        updates[col] = edited_row[col]
-                                
-                                # Atualiza se houver mudanças
-                                if updates:
-                                    try:
-                                        tracker.update_transaction(transaction_id, updates)
-                                    except Exception as e:
-                                        st.error(f"Erro ao atualizar transação {transaction_id}: {e}")
-                        
-                        st.success("Alterações salvas com sucesso!")
+                        st.success("Transações excluídas com sucesso!")
                         st.rerun()
-                
-                with col2:
-                    if st.button("🗑️ Excluir Selecionados"):
-                        # Filtra transações marcadas para exclusão
-                        to_delete = edited_df[edited_df['delete']]['_id'].tolist()
-                        
-                        if to_delete:
-                            deleted_count = 0
-                            for transaction_id in to_delete:
-                                try:
-                                    if tracker.delete_transaction(transaction_id):
-                                        deleted_count += 1
-                                except Exception as e:
-                                    st.error(f"Erro ao excluir transação {transaction_id}: {e}")
-                            
-                            if deleted_count > 0:
-                                st.success(f"{deleted_count} transações excluídas com sucesso!")
-                                st.rerun()
-                        else:
-                            st.warning("Nenhuma transação selecionada para exclusão")
+                    else:
+                        st.warning("Nenhuma transação selecionada para exclusão")
+        
+        else:
+            st.warning("Nenhuma transação encontrada para o período selecionado")
 
             
     elif choice == "Dicas Financeiras":
