@@ -741,7 +741,7 @@ def main():
                 if st.button("Adicionar Transação"):
                     current_month_index = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].index(new_month)
-                    current_year = year
+                    current_year = selected_year
                     
                     for i in range(repeat_months):
                         tracker.add_transaction(
