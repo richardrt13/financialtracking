@@ -749,7 +749,6 @@ def main():
                                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][current_month_index],
                             year=current_year,
                             month=new_month,
-                            year=selected_year,
                             category=new_category,
                             type=new_type,
                             value=new_value,
