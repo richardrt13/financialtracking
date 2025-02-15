@@ -636,7 +636,7 @@ def main():
     st.title("🏦 Gestor Financeiro Inteligente")
 
    
-    elif choice == "Análise Financeira":
+    if choice == "Análise Financeira":
         # Dentro do bloco elif choice == "Análise Financeira":
         st.subheader("📊 Consolidado Financeiro")
         
