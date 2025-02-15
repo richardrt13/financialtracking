@@ -184,39 +184,39 @@ class FinancialTracker:
         )
         
     def get_transactions(self, year=None):
-    """
-    Recupera transações, opcionalmente filtradas por ano
-    
-    Args:
-        year (int, optional): Ano para filtrar as transações
+        """
+        Recupera transações, opcionalmente filtradas por ano
         
-    Returns:
-        pd.DataFrame: DataFrame contendo as transações
-    """
-    # Base query com filtro de usuário
-    query = {'user_id': self.user_id}
-    
-    # Adiciona filtro de ano se especificado
-    if year is not None:
-        query['year'] = year
-        
-    # Recupera transações do MongoDB
-    transactions = list(self.transactions_collection.find(query))
-    
-    # Converte para DataFrame
-    df = pd.DataFrame(transactions)
-    
-    if not df.empty:
-        # Converte _id para string no próprio DataFrame
-        df['_id'] = df['_id'].astype(str)
-        
-        # Adiciona colunas faltantes se necessário
-        if 'paid' not in df.columns:
-            df['paid'] = False
-        if 'payment_date' not in df.columns:
-            df['payment_date'] = None
+        Args:
+            year (int, optional): Ano para filtrar as transações
             
-    return df
+        Returns:
+            pd.DataFrame: DataFrame contendo as transações
+        """
+        # Base query com filtro de usuário
+        query = {'user_id': self.user_id}
+        
+        # Adiciona filtro de ano se especificado
+        if year is not None:
+            query['year'] = year
+            
+        # Recupera transações do MongoDB
+        transactions = list(self.transactions_collection.find(query))
+        
+        # Converte para DataFrame
+        df = pd.DataFrame(transactions)
+        
+        if not df.empty:
+            # Converte _id para string no próprio DataFrame
+            df['_id'] = df['_id'].astype(str)
+            
+            # Adiciona colunas faltantes se necessário
+            if 'paid' not in df.columns:
+                df['paid'] = False
+            if 'payment_date' not in df.columns:
+                df['payment_date'] = None
+                
+        return df
 
     def get_transactions_for_display(self, year=None):
         """
@@ -956,11 +956,11 @@ def main():
           list(range(datetime.now().year, 2019, -1)))
     
     # Recupera transações do ano selecionado
-      df_transactions = tracker.get_transactions(selected_year)
+      df_transactions = tracker.get_transactions_for_display(selected_year)
     
       if not df_transactions.empty:
         # Adiciona coluna de ID para referência
-          df_transactions['_id'] = tracker.get_transactions_ids(selected_year)
+          df_transactions = tracker.get_transactions_for_display(selected_year)
         
         # Adiciona uma coluna de seleção (checkboxes) para exclusão
           df_transactions['Selecionar'] = False  # Coluna inicializada como False
