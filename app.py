@@ -749,77 +749,139 @@ def main():
 
             with col4:
                 total_investimento = df_transactions[df_transactions['type'] == 'Investimento']['value'].sum()
-                paid_investimento = df_transactions[(df_transactions['type'] == 'Investimento') & 
-                                             (df_transactions['paid'])]['value'].sum()
-                pending_investimento = total_investimento - paid_investimento
-                
-                st.metric(label="Total Investimentos",
-                         value=f"R$ {total_investimento:.2f}",
-                         delta=f"R$ {pending_investimento:.2f} pendente",
-                         delta_color="inverse")
+                st.metric(label="Total Investimentos", value=f"R$ {total_investimento:.2f}")
 
             with col5:
                 saldo_livre = total_receita - total_despesa - total_investimento
                 delta_saldo = f"Positivo" if saldo_livre >= 0 else "Negativo"
                 delta_color = "normal" if saldo_livre >= 0 else "inverse"
-    
                 st.metric(label="Saldo Livre",
                           value=f"R$ {saldo_livre:.2f}",
                           delta=delta_saldo,
                           delta_color=delta_color)
-            
-            # Tabela detalhada com status de pagamento
-            st.subheader("Detalhamento de Transações")
-            
-            # Prepara dados para exibição
-            display_df = df_transactions[['month', 'category', 'type', 'observation', 'value', 'paid']].copy()
-            
-            # Adiciona ícones para status de pagamento
-            def format_payment_status(row):
-                #if row['type'] != 'Despesa':
-                    #return "N/A"
-                return "✅" if row['paid'] else "⏳"
-            
-            display_df['Status'] = display_df.apply(format_payment_status, axis=1)
-            
-            # Remove coluna 'paid' da exibição
-            display_df = display_df.drop('paid', axis=1)
 
-            st.dataframe(
-                display_df.style.format({'value': 'R$ {:.2f}'})
-                .map(lambda x: 'color: green' if x == '✅' else 'color: orange', subset=['Status'])
+            # Nova seção para adicionar transações
+            with st.expander("➕ Adicionar Nova Transação"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    new_month = st.selectbox("Mês", 
+                        ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+                        key="new_month")
+                    
+                    new_type = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'], key="new_type")
+                    
+                    if new_type == 'Receita':
+                        new_category = st.selectbox("Categoria", 
+                            ['Salário - 1ª Parcela', 'Salário - 2ª Parcela', '13º Salário', 'Férias', 'Outros'],
+                            key="new_category")
+                    elif new_type == 'Despesa':
+                        new_category = st.selectbox("Categoria", 
+                            ['Cartão', 'Internet', 'Tv a Cabo', 'Manutenção do carro', 'Combustível', 'Gás',
+                             'Financiamento', 'Aluguel', 'Condomínio', 'Mercado', 'Cursos', 'Anuidade', 'Outros'],
+                            key="new_category")
+                    else:
+                        new_category = st.selectbox("Categoria", 
+                            ['Renda Fixa', 'Renda Variável'],
+                            key="new_category")
+                
+                with col2:
+                    new_value = st.number_input("Valor", min_value=0.0, format="%.2f", key="new_value")
+                    new_observation = st.text_area("Observações", 
+                        placeholder="Ex: Pagamento adiantado, Despesa extra, Bônus especial...",
+                        key="new_observation")
+                
+                if st.button("💾 Adicionar Transação"):
+                    tracker.add_transaction(
+                        month=new_month,
+                        year=selected_year,
+                        category=new_category,
+                        type=new_type,
+                        value=new_value,
+                        observation=new_observation
+                    )
+                    st.success("Transação adicionada com sucesso!")
+                    st.rerun()
+
+            # Tabela de transações editável
+            st.subheader("Gerenciamento de Transações")
+            
+            # Prepara dados para exibição e edição
+            df_transactions['_id'] = df_transactions['_id'].astype(str)
+            
+            edited_df = st.data_editor(
+                df_transactions,
+                column_config={
+                    "_id": st.column_config.TextColumn(
+                        "ID",
+                        disabled=True,
+                        visible=False
+                    ),
+                    "month": st.column_config.SelectboxColumn(
+                        "Mês",
+                        options=['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+                    ),
+                    "type": st.column_config.SelectboxColumn(
+                        "Tipo",
+                        options=['Receita', 'Despesa', 'Investimento']
+                    ),
+                    "value": st.column_config.NumberColumn(
+                        "Valor",
+                        format="R$ %.2f"
+                    ),
+                    "observation": st.column_config.TextColumn("Observação"),
+                    "paid": st.column_config.CheckboxColumn("Concluído"),
+                    "delete": st.column_config.CheckboxColumn("Excluir")
+                },
+                hide_index=True,
+                num_rows="dynamic"
             )
+
+            # Botões de ação
+            col1, col2 = st.columns(2)
             
-            if st.checkbox("Gerenciar Status de Compromissos"):
-                st.subheader("Atualizar Status de Compromissos")
+            with col1:
+                if st.button("💾 Salvar Alterações"):
+                    for index, row in edited_df.iterrows():
+                        original_row = df_transactions.iloc[index]
+                        updates = {}
+                        
+                        # Verifica alterações em cada campo
+                        for col in ['month', 'category', 'type', 'value', 'paid', 'observation']:
+                            if row[col] != original_row[col]:
+                                updates[col] = row[col]
+                        
+                        # Atualiza se houver mudanças
+                        if updates:
+                            try:
+                                tracker.update_transaction(row['_id'], updates)
+                            except Exception as e:
+                                st.error(f"Erro ao atualizar transação: {e}")
+                    
+                    st.success("Alterações salvas com sucesso!")
+                    st.rerun()
             
-                unpaid_transactions = df_transactions[
-                    (df_transactions['paid'].fillna(False) == False)
-                ][['_id', 'month', 'category', 'type', 'value', 'paid']]
-            
-                if not unpaid_transactions.empty:
-                    for _, row in unpaid_transactions.iterrows():
-                        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
-            
-                        with col1:
-                            st.write(f"{row['month']} - {row['category']}")
-                        with col2:
-                            st.write(f"{row['type']}")  # Adicionado o tipo
-                        with col3:
-                            st.write(f"R$ {row['value']:.2f}")
-                        with col4:
-                            button_text = {
-                                'Receita': '✅ Marcar como Recebido',
-                                'Despesa': '✅ Marcar como Pago',
-                                'Investimento': '✅ Marcar como Realizado'
-                            }.get(row['type'], '✅ Marcar como Concluído')
-            
-                            if st.button(button_text, key=row['_id']):
-                                tracker.update_payment_status(row['_id'])
-                                st.success(f"{row['type']} marcado como concluído!")
-                                st.rerun()
-                else:
-                    st.info("Não há movimentações pendentes no período selecionado! 🎉")
+            with col2:
+                if st.button("🗑️ Excluir Selecionados"):
+                    # Filtra transações marcadas para exclusão
+                    to_delete = edited_df[edited_df['delete']]['_id'].tolist()
+                    
+                    if to_delete:
+                        for transaction_id in to_delete:
+                            try:
+                                tracker.delete_transaction(transaction_id)
+                            except Exception as e:
+                                st.error(f"Erro ao excluir transação: {e}")
+                        
+                        st.success("Transações excluídas com sucesso!")
+                        st.rerun()
+                    else:
+                        st.warning("Nenhuma transação selecionada para exclusão")
+        
+        else:
+            st.warning("Nenhuma transação encontrada para o período selecionado")
 
             
     elif choice == "Dicas Financeiras":
