@@ -764,7 +764,7 @@ def main():
 
             # Tabela de transações editável
             st.subheader("Gerenciamento de Transações")
-            
+            df_transactions
             # Prepara dados para exibição e edição
             display_df = df_transactions.copy()
             display_df['_id'] = display_df['_id'].astype(str)
