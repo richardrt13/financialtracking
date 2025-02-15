@@ -745,7 +745,7 @@ def main():
                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
         
         # Recupera transações com filtros
-        df_transactions = tracker.get_transactions(selected_year)
+        df_transactions = tracker.get_transactions_for_display(selected_year)
         
         if selected_month != 'Todos':
             df_transactions = df_transactions[df_transactions['month'] == selected_month]
