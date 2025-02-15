@@ -706,53 +706,51 @@ def main():
             # Nova seção para adicionar transações
             with st.expander("➕ Adicionar Nova Transação"):
                 col1, col2 = st.columns(2)
-                
+        
                 with col1:
-                    new_month = st.selectbox("Mês", 
+                    year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
+                    month = st.selectbox("Mês", 
                         ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-                        key="new_month")
+                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
+        
                     
-                    new_type = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'], key="new_type")
+                    # Primeiro seleciona o tipo
+                    type_transaction = st.selectbox("Tipo", ['Receita', 'Despesa', 'Investimento'])
                     
-                    if new_type == 'Receita':
-                        new_category = st.selectbox("Categoria", 
-                            ['Salário - 1ª Parcela', 'Salário - 2ª Parcela', '13º Salário', 'Férias', 'Outros'],
-                            key="new_category")
-                    elif new_type == 'Despesa':
-                        new_category = st.selectbox("Categoria", 
+                    # Depois seleciona a categoria baseada no tipo
+                    if type_transaction == 'Receita':
+                        category = st.selectbox("Categoria", 
+                            ['Salário - 1ª Parcela', 'Salário - 2ª Parcela', '13º Salário', 'Férias', 'Outros'])
+                    elif type_transaction == 'Despesa':
+                        category = st.selectbox("Categoria", 
                             ['Cartão', 'Internet', 'Tv a Cabo', 'Manutenção do carro', 'Combustível', 'Gás',
-                             'Financiamento', 'Aluguel', 'Condomínio', 'Mercado', 'Cursos', 'Anuidade', 'Outros'],
-                            key="new_category")
-                    else:
-                        new_category = st.selectbox("Categoria", 
-                            ['Renda Fixa', 'Renda Variável'],
-                            key="new_category")
+                             'Financiamento', 'Aluguel', 'Condomínio', 'Mercado', 'Cursos', 'Anuidade', 'Outros'])
+                    else:  # Investimento
+                        category = st.selectbox("Categoria", 
+                            ['Renda Fixa', 'Renda Variável'])
                 
                 with col2:
+                    value = st.number_input("Valor", min_value=0.0, format="%.2f")
                     repeat_months = st.number_input("Repetir por quantos meses?", min_value=1, max_value=36, value=1)
-
                     
-                    new_value = st.number_input("Valor", min_value=0.0, format="%.2f", key="new_value")
-                    new_observation = st.text_area("Observações", 
-                        placeholder="Ex: Pagamento adiantado, Despesa extra, Bônus especial...",
-                        key="new_observation")
+                    # Campo para observações
+                    observation = st.text_area("Observações", 
+                        placeholder="Ex: Pagamento adiantado, Despesa extra, Bônus especial...")
                 
                 if st.button("Adicionar Transação"):
                     current_month_index = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].index(new_month)
-                    current_year = selected_year
+                                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].index(month)
+                    current_year = year
                     
                     for i in range(repeat_months):
                         tracker.add_transaction(
-                            new_month=['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                            month=['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][current_month_index],
                             year=current_year,
-                            month=new_month,
-                            category=new_category,
-                            type=new_type,
-                            value=new_value,
-                            observation=new_observation
+                            category=category,
+                            type=type_transaction,
+                            value=value,
+                            observation=observation
                         )
                         
                         # Avança para o próximo mês
