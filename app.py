@@ -748,9 +748,17 @@ def main():
         
                 with col1:
                     year = st.number_input("Ano", min_value=2020, max_value=2030, value=datetime.now().year)
-                    month = st.selectbox("Mês", 
-                        ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
+
+                    meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+
+                    mes_atual = datetime.now().month - 1
+
+
+                    month = st.selectbox("Mês", meses, index=mes_atual)
+                    #month = st.selectbox("Mês", 
+                    #    ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                      #   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'])
         
                     
                     # Primeiro seleciona o tipo
