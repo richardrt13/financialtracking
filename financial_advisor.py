@@ -1,3 +1,7 @@
+import streamlit as st
+import pandas as pd
+import google.generativeai as genai 
+
 class FinancialAdvisor:
     def __init__(self, transactions_df: pd.DataFrame):
         """
