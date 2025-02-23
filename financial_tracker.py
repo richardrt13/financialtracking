@@ -4,6 +4,7 @@ from datetime import datetime
 import plotly.express as px
 import streamlit as st
 
+mongo_uri = st.secrets["mongo_uri"]
 
 class FinancialTracker:
     def __init__(self, user_id=None):
