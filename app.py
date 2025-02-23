@@ -16,6 +16,7 @@ from custom_select import custom_select
 from financial_advisor import FinancialAdvisor
 from financial_tracker import FinancialTracker
 from purchase_intelligence_interface import purchase_intelligence_interface
+from login_page import login_page
 
 mongo_uri = st.secrets["mongo_uri"]
                     
@@ -34,66 +35,66 @@ def check_mongodb_connection():
         st.warning("Verifique sua connection string e configurações de rede.")
         return False
 
-def login_page():
-    """Render login page"""
-    st.title("🔐 Login")
+# def login_page():
+#     """Render login page"""
+#     st.title("🔐 Login")
     
-    # Initialize auth manager
-    auth_manager = AuthManager(st.secrets["mongo_uri"])
+#     # Initialize auth manager
+#     auth_manager = AuthManager(st.secrets["mongo_uri"])
     
-    # Check if already logged in
-    current_user = auth_manager.get_current_user()
-    if current_user:
-        st.success(f"Você já está logado como {current_user['name']}!")
-        if st.button("Sair"):
-            auth_manager.logout_user()
-            st.rerun()
-        return True
+#     # Check if already logged in
+#     current_user = auth_manager.get_current_user()
+#     if current_user:
+#         st.success(f"Você já está logado como {current_user['name']}!")
+#         if st.button("Sair"):
+#             auth_manager.logout_user()
+#             st.rerun()
+#         return True
     
-    # Login/Register tabs
-    tab1, tab2 = st.tabs(["Login", "Cadastro"])
+#     # Login/Register tabs
+#     tab1, tab2 = st.tabs(["Login", "Cadastro"])
     
-    with tab1:
-        with st.form("login_form"):
-            email = st.text_input("Email")
-            password = st.text_input("Senha", type="password")
-            remember_me = st.checkbox("Lembrar-me neste dispositivo", 
-                                    help="Ninguém merece fazer login toda hora, né?!")
+#     with tab1:
+#         with st.form("login_form"):
+#             email = st.text_input("Email")
+#             password = st.text_input("Senha", type="password")
+#             remember_me = st.checkbox("Lembrar-me neste dispositivo", 
+#                                     help="Ninguém merece fazer login toda hora, né?!")
             
-            # Adiciona mensagem sobre usuário legado
-            if email == "admin@example.com":
-                st.info("Use este login para acessar os dados existentes.")
+#             # Adiciona mensagem sobre usuário legado
+#             if email == "admin@example.com":
+#                 st.info("Use este login para acessar os dados existentes.")
                 
-            submitted = st.form_submit_button("Entrar")
+#             submitted = st.form_submit_button("Entrar")
             
-            if submitted:
-                success, result = auth_manager.login_user(email, password, remember_me)
-                if success:
-                    st.session_state['token'] = result
-                    st.success("Login realizado com sucesso!")
-                    st.rerun()
-                else:
-                    st.error(result)
+#             if submitted:
+#                 success, result = auth_manager.login_user(email, password, remember_me)
+#                 if success:
+#                     st.session_state['token'] = result
+#                     st.success("Login realizado com sucesso!")
+#                     st.rerun()
+#                 else:
+#                     st.error(result)
     
-    with tab2:
-        with st.form("register_form"):
-            name = st.text_input("Nome")
-            email = st.text_input("Email")
-            password = st.text_input("Senha", type="password")
-            password_confirm = st.text_input("Confirme a senha", type="password")
-            submitted = st.form_submit_button("Cadastrar")
+#     with tab2:
+#         with st.form("register_form"):
+#             name = st.text_input("Nome")
+#             email = st.text_input("Email")
+#             password = st.text_input("Senha", type="password")
+#             password_confirm = st.text_input("Confirme a senha", type="password")
+#             submitted = st.form_submit_button("Cadastrar")
             
-            if submitted:
-                if password != password_confirm:
-                    st.error("As senhas não conferem!")
-                elif not name:
-                    st.error("Nome é obrigatório!")
-                else:
-                    success, result = auth_manager.register_user(email, password, name)
-                    if success:
-                        st.success("Cadastro realizado com sucesso! Faça login para continuar.")
-                    else:
-                        st.error(result)
+#             if submitted:
+#                 if password != password_confirm:
+#                     st.error("As senhas não conferem!")
+#                 elif not name:
+#                     st.error("Nome é obrigatório!")
+#                 else:
+#                     success, result = auth_manager.register_user(email, password, name)
+#                     if success:
+#                         st.success("Cadastro realizado com sucesso! Faça login para continuar.")
+#                     else:
+#                         st.error(result)
 
 def main():
     """
