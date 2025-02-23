@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from financial_advisor import FinancialAdvisor, tracker
+from financial_advisor import FinancialAdvisor
 
 def purchase_intelligence_interface(tracker):
     """
